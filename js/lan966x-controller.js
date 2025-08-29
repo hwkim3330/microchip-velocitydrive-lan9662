@@ -23,6 +23,13 @@ export class LAN966xController {
         // Send ping to check connection
         await this.ping();
         
+        // Initial CORECONF handshake to load catalog (matches CLI)
+        try {
+            await this.coap.fetch('c?d=a', [0x7278]); // CBOR: 0x81 0x19 0x72 0x78
+        } catch (e) {
+            console.warn('Catalog fetch failed (non-fatal):', e.message);
+        }
+
         // Get device information
         await this.getDeviceInfo();
         

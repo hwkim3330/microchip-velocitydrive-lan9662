@@ -71,7 +71,7 @@ export class CoAPClient {
         // Version (2 bits) | Type (2 bits) | Token Length (4 bits)
         const ver = 1; // CoAP version 1
         const type = 0; // Confirmable
-        const tkl = 2; // Token length
+        const tkl = 0; // Token length (CLI는 토큰 미사용)
         header.push((ver << 6) | (type << 4) | tkl);
         
         // Code (8 bits)
@@ -82,10 +82,7 @@ export class CoAPClient {
         header.push((messageId >> 8) & 0xFF);
         header.push(messageId & 0xFF);
         
-        // Token (variable)
-        const token = this.token;
-        header.push((token >> 8) & 0xFF);
-        header.push(token & 0xFF);
+        // Token 미사용 (TKL=0)
         
         // Options
         const options = this.encodeOptions(uri);
@@ -106,7 +103,8 @@ export class CoAPClient {
      */
     encodeOptions(uri) {
         const options = [];
-        const segments = uri.split('/').filter(s => s);
+        const [pathPart, queryPart] = uri.split('?');
+        const segments = (pathPart || '').split('/').filter(s => s);
         
         let prevOption = 0;
         
@@ -156,12 +154,33 @@ export class CoAPClient {
             prevOption = 11;
         });
         
-        // Content-Format option (Option 12) for CBOR
-        const contentFormat = 60; // application/cbor
-        const delta = 12 - prevOption;
+        // Content-Format option (Option 12) for CBOR payload
+        // NOTE: 실제 CORECONF 미디어타입은 yang-*-cbor-seq 이지만 우선 60(application/cbor) 사용
+        let delta = 12 - prevOption;
         options.push((delta << 4) | 1);
-        options.push(contentFormat);
-        
+        options.push(60);
+        prevOption = 12;
+
+        // Uri-Query options (Option 15) e.g., d=a
+        if (queryPart) {
+            const queries = queryPart.split('&').filter(Boolean);
+            for (const q of queries) {
+                const qBytes = [];
+                for (let i = 0; i < q.length; i++) qBytes.push(q.charCodeAt(i));
+                delta = 15 - prevOption;
+                if (delta < 13 && qBytes.length < 13) {
+                    options.push((delta << 4) | qBytes.length);
+                } else {
+                    // 단순 확장 형식 (길이<269 가정)
+                    const first = (delta < 13 ? delta : 13) << 4 | 13;
+                    options.push(first);
+                    options.push(qBytes.length - 13);
+                }
+                options.push(...qBytes);
+                prevOption = 15;
+            }
+        }
+
         return options;
     }
 

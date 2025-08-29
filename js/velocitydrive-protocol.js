@@ -205,14 +205,25 @@ export class MUP1Protocol {
      */
     parseAnnouncement(data) {
         const decoder = new TextDecoder();
-        const text = decoder.decode(data);
-        const parts = text.split(':');
-        
-        return {
-            deviceType: parts[0] || 'Unknown',
-            firmwareVersion: parts[1] || 'Unknown',
-            serialNumber: parts[2] || 'Unknown'
-        };
+        const text = decoder.decode(data).trim();
+        // Expected: "VelocitySP-v2025.06-LAN9662-ung8291 326 300 2"
+        const info = { deviceType: 'Unknown', firmwareVersion: 'Unknown', serialNumber: 'Unknown' };
+        if (text.startsWith('VelocitySP-v')) {
+            const [front, p1, p2, p3] = text.split(/\s+/);
+            // front = VelocitySP-v2025.06-LAN9662-ung8291
+            const parts = front.split('-');
+            // parts: [ 'VelocitySP', 'v2025.06', 'LAN9662', 'ung8291' ]
+            if (parts.length >= 4) {
+                info.firmwareVersion = parts[1].replace(/^v/, '');
+                info.deviceType = parts[2];
+                info.serialNumber = parts[3];
+            } else {
+                info.deviceType = front;
+            }
+        } else {
+            info.deviceType = text;
+        }
+        return info;
     }
 }
 
