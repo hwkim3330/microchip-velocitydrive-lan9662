@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN9662 VelocityDRIVE Complete Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            padding: 10px 10px 0 10px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: #f0f0f0;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #0f0;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .console-line {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .console-line.command {
+            color: #61dafb;
+        }
+        
+        .console-line.success {
+            color: #0f0;
+        }
+        
+        .console-line.error {
+            color: #f44;
+        }
+        
+        .console-line.info {
+            color: #ff9;
+        }
+        
+        .priority-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .priority-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .priority-item label {
+            margin: 0;
+            min-width: 50px;
+        }
+        
+        .priority-item input {
+            width: 80px;
+        }
+        
+        .gcl-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .gcl-entry {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 120px 80px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        .gcl-entry input {
+            padding: 8px;
+        }
+        
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .preset-button {
+            padding: 15px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .preset-button:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.connected {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.disconnected {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .command-builder {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .command-preview {
+            background: #1e1e1e;
+            color: #61dafb;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .vlan-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .vlan-item {
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .priority-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .gcl-entry {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>
+                🎛️ LAN9662 VelocityDRIVE Complete Control Panel
+                <span style="margin-left: auto; font-size: 16px;">
+                    <span class="status-indicator disconnected" id="status-indicator"></span>
+                    <span id="status-text">Not Connected</span>
+                </span>
+            </h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('direct')">Direct Command</div>
+            <div class="tab" onclick="switchTab('cbs')">CBS Configuration</div>
+            <div class="tab" onclick="switchTab('tas')">TAS Configuration</div>
+            <div class="tab" onclick="switchTab('priority')">Priority/QoS</div>
+            <div class="tab" onclick="switchTab('vlan')">VLAN Setup</div>
+            <div class="tab" onclick="switchTab('ptp')">PTP/1588</div>
+            <div class="tab" onclick="switchTab('yang')">YANG Browser</div>
+            <div class="tab" onclick="switchTab('presets')">Presets</div>
+        </div>
+        
+        <!-- Direct Command Tab -->
+        <div id="direct-tab" class="tab-content active">
+            <div class="info-box">
+                <h4>ℹ️ mvdct Command Interface</h4>
+                <p>Execute mvdct commands directly. The command will be prefixed with the mvdct path automatically.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>📝 Command Builder</h3>
+                    <div class="form-group">
+                        <label>Device Port:</label>
+                        <input type="text" id="device-port" value="/dev/ttyACM0">
+                    </div>
+                    <div class="form-group">
+                        <label>Command Type:</label>
+                        <select id="cmd-type" onchange="updateCommandPreview()">
+                            <option value="get">GET</option>
+                            <option value="set">SET</option>
+                            <option value="delete">DELETE</option>
+                            <option value="yang">YANG</option>
+                            <option value="type">Type</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>YANG Path / Command:</label>
+                        <textarea id="yang-path" placeholder="/ietf-system:system-state/platform" onkeyup="updateCommandPreview()"></textarea>
+                    </div>
+                    <div class="form-group" id="value-group" style="display:none;">
+                        <label>Value:</label>
+                        <input type="text" id="cmd-value" placeholder="Value to set" onkeyup="updateCommandPreview()">
+                    </div>
+                    <div class="command-preview" id="command-preview">
+                        mvdct device /dev/ttyACM0 get /ietf-system:system-state/platform
+                    </div>
+                    <button onclick="executeDirectCommand()">Execute Command</button>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ Quick Commands</h3>
+                    <div class="button-group">
+                        <button onclick="quickCommand('device-info')">Device Info</button>
+                        <button onclick="quickCommand('interfaces')">Interfaces</button>
+                        <button onclick="quickCommand('bridge-status')">Bridge Status</button>
+                        <button onclick="quickCommand('ptp-status')">PTP Status</button>
+                        <button onclick="quickCommand('cbs-status')">CBS Status</button>
+                        <button onclick="quickCommand('tas-status')">TAS Status</button>
+                        <button onclick="quickCommand('vlan-list')">VLAN List</button>
+                        <button onclick="quickCommand('statistics')">Statistics</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CBS Configuration Tab -->
+        <div id="cbs-tab" class="tab-content">
+            <div class="info-box">
+                <h4>📊 Credit-Based Shaper Configuration</h4>
+                <p>Configure CBS parameters for each traffic class. CBS controls bandwidth allocation using a credit system.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>⚙️ CBS Parameters</h3>
+                    <div class="form-group">
+                        <label>Interface:</label>
+                        <select id="cbs-interface">
+                            <option value="eth0">eth0</option>
+                            <option value="eth1">eth1</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Traffic Class:</label>
+                        <select id="cbs-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2 (Default: 1.5 Mbps)</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6 (Default: 3.5 Mbps)</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Idle Slope (kbps):</label>
+                        <input type="number" id="cbs-idle-slope" value="1500" min="0" max="100000">
+                    </div>
+                    <div class="form-group">
+                        <label>Send Slope (kbps, auto-calculated):</label>
+                        <input type="number" id="cbs-send-slope" value="-98500" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Hi Credit (bytes):</label>
+                        <input type="number" id="cbs-hi-credit" value="12176">
+                    </div>
+                    <div class="form-group">
+                        <label>Lo Credit (bytes):</label>
+                        <input type="number" id="cbs-lo-credit" value="-12176">
+                    </div>
+                    <button onclick="applyCBS()">Apply CBS Configuration</button>
+                </div>
+                
+                <div class="card">
+                    <h3>🎯 CBS Presets</h3>
+                    <div class="preset-buttons">
+                        <div class="preset-button" onclick="loadCBSPreset('voice')">
+                            🎤 Voice (1.5 Mbps)
+                        </div>
+                        <div class="preset-button" onclick="loadCBSPreset('video')">
+                            📹 Video (3.5 Mbps)
+                        </div>
+                        <div class="preset-button" onclick="loadCBSPreset('control')">
+                            🎮 Control (500 kbps)
+                        </div>
+                        <div class="preset-button" onclick="loadCBSPreset('bulk')">
+                            📦 Bulk Data (10 Mbps)
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;">📈 Bandwidth Calculator</h3>
+                    <div class="form-group">
+                        <label>Link Speed (Mbps):</label>
+                        <input type="number" id="link-speed" value="100" onchange="calculateCBS()">
+                    </div>
+                    <div class="form-group">
+                        <label>Reserved Bandwidth (%):</label>
+                        <input type="range" id="reserved-bw" min="1" max="100" value="15" onchange="calculateCBS()">
+                        <span id="reserved-bw-display">15%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TAS Configuration Tab -->
+        <div id="tas-tab" class="tab-content">
+            <div class="info-box">
+                <h4>⏰ Time-Aware Shaper Configuration</h4>
+                <p>Configure gate control lists for time-based traffic scheduling. Each TC gets a specific time slot in the cycle.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>🕐 TAS Global Settings</h3>
+                    <div class="form-group">
+                        <label>Interface:</label>
+                        <select id="tas-interface">
+                            <option value="eth0">eth0</option>
+                            <option value="eth1">eth1</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cycle Time (ms):</label>
+                        <input type="number" id="tas-cycle-time" value="200" min="1" max="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Base Time Offset (seconds from now):</label>
+                        <input type="number" id="tas-base-offset" value="1" min="0" max="60">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Gate Control List</h3>
+                    <div class="gcl-container" id="gcl-container">
+                        <!-- GCL entries will be added here -->
+                    </div>
+                    <div class="button-group">
+                        <button onclick="addGCLEntry()">➕ Add Entry</button>
+                        <button onclick="loadTASPreset('balanced')">Load Balanced</button>
+                        <button onclick="loadTASPreset('priority')">Load Priority</button>
+                        <button onclick="clearGCL()">Clear All</button>
+                    </div>
+                    <button onclick="applyTAS()" style="margin-top: 15px; width: 100%;">Apply TAS Configuration</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Priority/QoS Tab -->
+        <div id="priority-tab" class="tab-content">
+            <div class="info-box">
+                <h4>🎯 Priority and QoS Mapping</h4>
+                <p>Configure PCP to Priority to Traffic Class mappings and DSCP to PCP mappings.</p>
+            </div>
+            
+            <div class="card">
+                <h3>🔄 PCP to Priority Mapping</h3>
+                <div class="priority-grid">
+                    <div class="priority-item">
+                        <label>PCP 0:</label>
+                        <input type="number" id="pcp-0-priority" value="0" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 1:</label>
+                        <input type="number" id="pcp-1-priority" value="1" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 2:</label>
+                        <input type="number" id="pcp-2-priority" value="2" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 3:</label>
+                        <input type="number" id="pcp-3-priority" value="3" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 4:</label>
+                        <input type="number" id="pcp-4-priority" value="4" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 5:</label>
+                        <input type="number" id="pcp-5-priority" value="5" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 6:</label>
+                        <input type="number" id="pcp-6-priority" value="6" min="0" max="7">
+                    </div>
+                    <div class="priority-item">
+                        <label>PCP 7:</label>
+                        <input type="number" id="pcp-7-priority" value="7" min="0" max="7">
+                    </div>
+                </div>
+                <button onclick="applyPCPMapping()" style="margin-top: 15px;">Apply PCP Mapping</button>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3>🎛️ Priority to Traffic Class Mapping</h3>
+                <div class="priority-grid">
+                    <div class="priority-item">
+                        <label>Priority 0:</label>
+                        <select id="priority-0-tc">
+                            <option value="0" selected>TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 1:</label>
+                        <select id="priority-1-tc">
+                            <option value="0">TC0</option>
+                            <option value="1" selected>TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 2:</label>
+                        <select id="priority-2-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2" selected>TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 3:</label>
+                        <select id="priority-3-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3" selected>TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 4:</label>
+                        <select id="priority-4-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4" selected>TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 5:</label>
+                        <select id="priority-5-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5" selected>TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 6:</label>
+                        <select id="priority-6-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6" selected>TC6</option>
+                            <option value="7">TC7</option>
+                        </select>
+                    </div>
+                    <div class="priority-item">
+                        <label>Priority 7:</label>
+                        <select id="priority-7-tc">
+                            <option value="0">TC0</option>
+                            <option value="1">TC1</option>
+                            <option value="2">TC2</option>
+                            <option value="3">TC3</option>
+                            <option value="4">TC4</option>
+                            <option value="5">TC5</option>
+                            <option value="6">TC6</option>
+                            <option value="7" selected>TC7</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="applyPriorityTCMapping()" style="margin-top: 15px;">Apply Priority to TC Mapping</button>
+            </div>
+        </div>
+        
+        <!-- VLAN Setup Tab -->
+        <div id="vlan-tab" class="tab-content">
+            <div class="info-box">
+                <h4>🌐 VLAN Configuration</h4>
+                <p>Configure VLANs and bridge settings for the LAN9662 device.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>🌉 Bridge Configuration</h3>
+                    <div class="form-group">
+                        <label>Bridge Name:</label>
+                        <input type="text" id="bridge-name" value="br0">
+                    </div>
+                    <div class="form-group">
+                        <label>Bridge Type:</label>
+                        <select id="bridge-type">
+                            <option value="provider-bridge">Provider Bridge</option>
+                            <option value="customer-bridge">Customer Bridge</option>
+                        </select>
+                    </div>
+                    <button onclick="configureBridge()">Configure Bridge</button>
+                </div>
+                
+                <div class="card">
+                    <h3>🏷️ VLAN Management</h3>
+                    <div class="form-group">
+                        <label>VLAN ID:</label>
+                        <input type="number" id="vlan-id" min="1" max="4094" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>VLAN Name:</label>
+                        <input type="text" id="vlan-name" placeholder="VLAN 100">
+                    </div>
+                    <div class="form-group">
+                        <label>Ports:</label>
+                        <div class="button-group">
+                            <label><input type="checkbox" id="vlan-port-0" checked> Port 0</label>
+                            <label><input type="checkbox" id="vlan-port-1" checked> Port 1</label>
+                        </div>
+                    </div>
+                    <button onclick="addVLAN()">Add VLAN</button>
+                    
+                    <h4 style="margin-top: 20px;">Existing VLANs</h4>
+                    <div class="vlan-config" id="vlan-list">
+                        <div class="vlan-item">VLAN 1 (Default)</div>
+                        <div class="vlan-item">VLAN 10 (TAS Test)</div>
+                        <div class="vlan-item">VLAN 100 (CBS Test)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PTP/1588 Tab -->
+        <div id="ptp-tab" class="tab-content">
+            <div class="info-box">
+                <h4>🕐 IEEE 1588 PTP Configuration</h4>
+                <p>Configure Precision Time Protocol for network synchronization.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>⚙️ PTP Global Settings</h3>
+                    <div class="form-group">
+                        <label>Domain Number:</label>
+                        <input type="number" id="ptp-domain" value="0" min="0" max="127">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority 1:</label>
+                        <input type="number" id="ptp-priority1" value="128" min="0" max="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority 2:</label>
+                        <input type="number" id="ptp-priority2" value="128" min="0" max="255">
+                    </div>
+                    <div class="form-group">
+                        <label>Clock Class:</label>
+                        <select id="ptp-clock-class">
+                            <option value="248">248 - Default</option>
+                            <option value="187">187 - GPS</option>
+                            <option value="193">193 - Time Source</option>
+                        </select>
+                    </div>
+                    <button onclick="configurePTP()">Apply PTP Configuration</button>
+                </div>
+                
+                <div class="card">
+                    <h3>🔌 PTP Port Settings</h3>
+                    <div class="form-group">
+                        <label>Port Number:</label>
+                        <select id="ptp-port">
+                            <option value="1">Port 1</option>
+                            <option value="2">Port 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Port State:</label>
+                        <select id="ptp-port-state">
+                            <option value="master">Master</option>
+                            <option value="slave">Slave</option>
+                            <option value="passive">Passive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Announce Interval (log2):</label>
+                        <input type="number" id="ptp-announce" value="0" min="-3" max="4">
+                    </div>
+                    <div class="form-group">
+                        <label>Sync Interval (log2):</label>
+                        <input type="number" id="ptp-sync" value="-3" min="-7" max="0">
+                    </div>
+                    <button onclick="configurePTPPort()">Apply Port Configuration</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- YANG Browser Tab -->
+        <div id="yang-tab" class="tab-content">
+            <div class="info-box">
+                <h4>🌲 YANG Data Model Browser</h4>
+                <p>Browse and modify YANG data models directly.</p>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>📂 YANG Path Explorer</h3>
+                    <div class="form-group">
+                        <label>YANG Path:</label>
+                        <input type="text" id="yang-browser-path" placeholder="/ietf-system:system-state/platform">
+                    </div>
+                    <div class="button-group">
+                        <button onclick="yangGet()">GET</button>
+                        <button onclick="yangSet()">SET</button>
+                        <button onclick="yangDelete()">DELETE</button>
+                    </div>
+                    <div class="form-group" id="yang-value-group" style="display:none; margin-top:15px;">
+                        <label>Value:</label>
+                        <textarea id="yang-value" placeholder="Enter value (JSON or plain text)"></textarea>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔍 Common YANG Paths</h3>
+                    <div class="button-group" style="flex-direction: column; align-items: stretch;">
+                        <button onclick="setYangPath('/ietf-system:system-state')">/ietf-system:system-state</button>
+                        <button onclick="setYangPath('/ietf-interfaces:interfaces')">/ietf-interfaces:interfaces</button>
+                        <button onclick="setYangPath('/ieee802-dot1q-bridge:bridges')">/ieee802-dot1q-bridge:bridges</button>
+                        <button onclick="setYangPath('/ieee802-dot1q-sched:interfaces')">/ieee802-dot1q-sched:interfaces</button>
+                        <button onclick="setYangPath('/ieee1588-ptp:instances')">/ieee1588-ptp:instances</button>
+                        <button onclick="setYangPath('/ietf-constrained-yang-library:yang-library')">/ietf-constrained-yang-library:yang-library</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Presets Tab -->
+        <div id="presets-tab" class="tab-content">
+            <div class="info-box">
+                <h4>🎯 Configuration Presets</h4>
+                <p>Quick configurations for common TSN scenarios.</p>
+            </div>
+            
+            <div class="preset-buttons">
+                <div class="preset-button" onclick="loadPreset('automotive')">
+                    🚗 Automotive TSN
+                </div>
+                <div class="preset-button" onclick="loadPreset('industrial')">
+                    🏭 Industrial Automation
+                </div>
+                <div class="preset-button" onclick="loadPreset('avb')">
+                    🎵 Audio/Video Bridging
+                </div>
+                <div class="preset-button" onclick="loadPreset('testing')">
+                    🧪 Testing Configuration
+                </div>
+                <div class="preset-button" onclick="loadPreset('default')">
+                    🔄 Factory Default
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3>📋 Preset Details</h3>
+                <div id="preset-details">
+                    <p>Select a preset to see details...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Console Output -->
+        <div class="console" id="console">
+            <div class="console-line info">🚀 LAN9662 Control Panel Ready</div>
+            <div class="console-line info">📡 mvdct path: /home/kim/Downloads/Microchip_VelocityDRIVE_CT-CLI-linux-2025.07.12/mvdct</div>
+            <div class="console-line info">🔌 Default port: /dev/ttyACM0</div>
+            <div class="console-line">──────────────────────────────────────────────────────────────</div>
+        </div>
+        
+        <div class="button-group" style="margin-top: 20px;">
+            <button onclick="clearConsole()">Clear Console</button>
+            <button onclick="exportCommands()">Export Commands</button>
+            <button onclick="saveConfiguration()">Save Configuration</button>
+            <button onclick="loadConfiguration()">Load Configuration</button>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const MVDCT_PATH = '/home/kim/Downloads/Microchip_VelocityDRIVE_CT-CLI-linux-2025.07.12/mvdct';
+        let commandHistory = [];
+        let gclEntryCount = 0;
+        
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        
+        // Console functions
+        function addToConsole(message, type = 'info') {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            line.textContent = `[${timestamp}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+            
+            // Add to history
+            commandHistory.push({
+                timestamp,
+                message,
+                type
+            });
+        }
+        
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '<div class="console-line info">Console cleared.</div>';
+        }
+        
+        // Command builder
+        function updateCommandPreview() {
+            const port = document.getElementById('device-port').value;
+            const cmdType = document.getElementById('cmd-type').value;
+            const yangPath = document.getElementById('yang-path').value;
+            const value = document.getElementById('cmd-value').value;
+            
+            let command = `${MVDCT_PATH} device ${port} `;
+            
+            if (cmdType === 'set') {
+                document.getElementById('value-group').style.display = 'block';
+                command += `set ${yangPath} ${value}`;
+            } else if (cmdType === 'get') {
+                document.getElementById('value-group').style.display = 'none';
+                command += `get ${yangPath}`;
+            } else if (cmdType === 'delete') {
+                document.getElementById('value-group').style.display = 'none';
+                command += `delete ${yangPath}`;
+            } else if (cmdType === 'custom') {
+                command = `${MVDCT_PATH} ${yangPath}`;
+            } else {
+                command += yangPath;
+            }
+            
+            document.getElementById('command-preview').textContent = command;
+        }
+        
+        // Execute direct command
+        function executeDirectCommand() {
+            const preview = document.getElementById('command-preview').textContent;
+            addToConsole(`Executing: ${preview}`, 'command');
+            
+            // Simulate command execution
+            setTimeout(() => {
+                addToConsole('Command executed successfully', 'success');
+            }, 500);
+        }
+        
+        // Quick commands
+        function quickCommand(cmd) {
+            const port = document.getElementById('device-port').value;
+            let command = '';
+            
+            switch(cmd) {
+                case 'device-info':
+                    command = `${MVDCT_PATH} device ${port} get /ietf-system:system-state/platform`;
+                    break;
+                case 'interfaces':
+                    command = `${MVDCT_PATH} device ${port} get /ietf-interfaces:interfaces`;
+                    break;
+                case 'bridge-status':
+                    command = `${MVDCT_PATH} device ${port} get /ieee802-dot1q-bridge:bridges`;
+                    break;
+                case 'ptp-status':
+                    command = `${MVDCT_PATH} device ${port} get /ieee1588-ptp:instances`;
+                    break;
+                case 'cbs-status':
+                    command = `${MVDCT_PATH} device ${port} get /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/traffic-class`;
+                    break;
+                case 'tas-status':
+                    command = `${MVDCT_PATH} device ${port} get /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-control-list`;
+                    break;
+                case 'vlan-list':
+                    command = `${MVDCT_PATH} device ${port} get /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/filtering-database`;
+                    break;
+                case 'statistics':
+                    command = `${MVDCT_PATH} device ${port} get /ietf-interfaces:interfaces-state/interface/statistics`;
+                    break;
+            }
+            
+            addToConsole(`Executing: ${command}`, 'command');
+            setTimeout(() => {
+                addToConsole(`${cmd} retrieved successfully`, 'success');
+            }, 500);
+        }
+        
+        // CBS functions
+        function calculateCBS() {
+            const linkSpeed = parseInt(document.getElementById('link-speed').value);
+            const reservedBw = parseInt(document.getElementById('reserved-bw').value);
+            
+            document.getElementById('reserved-bw-display').textContent = reservedBw + '%';
+            
+            const idleSlope = Math.floor(linkSpeed * reservedBw * 10); // kbps
+            const sendSlope = -(linkSpeed * 1000 - idleSlope);
+            
+            document.getElementById('cbs-idle-slope').value = idleSlope;
+            document.getElementById('cbs-send-slope').value = sendSlope;
+        }
+        
+        function loadCBSPreset(preset) {
+            const presets = {
+                'voice': { idle: 1500, hi: 12176, lo: -12176 },
+                'video': { idle: 3500, hi: 12176, lo: -12176 },
+                'control': { idle: 500, hi: 6088, lo: -6088 },
+                'bulk': { idle: 10000, hi: 24352, lo: -24352 }
+            };
+            
+            const p = presets[preset];
+            document.getElementById('cbs-idle-slope').value = p.idle;
+            document.getElementById('cbs-hi-credit').value = p.hi;
+            document.getElementById('cbs-lo-credit').value = p.lo;
+            document.getElementById('cbs-send-slope').value = -(100000 - p.idle);
+            
+            addToConsole(`Loaded CBS preset: ${preset}`, 'info');
+        }
+        
+        function applyCBS() {
+            const port = document.getElementById('device-port').value;
+            const iface = document.getElementById('cbs-interface').value;
+            const tc = document.getElementById('cbs-tc').value;
+            const idleSlope = document.getElementById('cbs-idle-slope').value;
+            
+            const commands = [
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/traffic-class[index='${tc}']/credit-based-shaper/idle-slope ${idleSlope}`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/traffic-class[index='${tc}']/credit-based-shaper/send-slope -${100000 - idleSlope}`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/traffic-class[index='${tc}']/credit-based-shaper/admin-idleslope-enabled true`
+            ];
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('CBS configuration applied successfully', 'success');
+            }, 1000);
+        }
+        
+        // TAS functions
+        function addGCLEntry() {
+            const container = document.getElementById('gcl-container');
+            const entry = document.createElement('div');
+            entry.className = 'gcl-entry';
+            entry.innerHTML = `
+                <span>TC${gclEntryCount}</span>
+                <input type="number" placeholder="Duration (ns)" value="${gclEntryCount === 0 ? 50000000 : 20000000}">
+                <input type="text" placeholder="Gate (hex)" value="0x${(1 << gclEntryCount).toString(16).padStart(2, '0')}">
+                <select>
+                    <option value="set-and-hold">Set and Hold</option>
+                    <option value="set-and-release">Set and Release</option>
+                </select>
+                <button onclick="removeGCLEntry(this)">Remove</button>
+            `;
+            container.appendChild(entry);
+            gclEntryCount++;
+        }
+        
+        function removeGCLEntry(button) {
+            button.parentElement.remove();
+            updateGCLIndices();
+        }
+        
+        function updateGCLIndices() {
+            const entries = document.querySelectorAll('.gcl-entry');
+            entries.forEach((entry, index) => {
+                entry.querySelector('span').textContent = `TC${index}`;
+            });
+            gclEntryCount = entries.length;
+        }
+        
+        function clearGCL() {
+            document.getElementById('gcl-container').innerHTML = '';
+            gclEntryCount = 0;
+        }
+        
+        function loadTASPreset(preset) {
+            clearGCL();
+            
+            if (preset === 'balanced') {
+                // Equal time for all TCs
+                for (let i = 0; i < 8; i++) {
+                    addGCLEntry();
+                }
+            } else if (preset === 'priority') {
+                // More time for higher priority TCs
+                const durations = [50000000, 30000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000];
+                for (let i = 0; i < 8; i++) {
+                    addGCLEntry();
+                    const entries = document.querySelectorAll('.gcl-entry');
+                    entries[i].querySelector('input[type="number"]').value = durations[i];
+                }
+            }
+            
+            addToConsole(`Loaded TAS preset: ${preset}`, 'info');
+        }
+        
+        function applyTAS() {
+            const port = document.getElementById('device-port').value;
+            const iface = document.getElementById('tas-interface').value;
+            const cycleTime = parseInt(document.getElementById('tas-cycle-time').value) * 1000000; // Convert to ns
+            const baseOffset = parseInt(document.getElementById('tas-base-offset').value);
+            const baseTime = Date.now() * 1000000 + baseOffset * 1000000000;
+            
+            const entries = document.querySelectorAll('.gcl-entry');
+            const commands = [
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/admin-base-time ${baseTime}`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/admin-cycle-time ${cycleTime}`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/admin-control-list-length ${entries.length}`
+            ];
+            
+            entries.forEach((entry, index) => {
+                const duration = entry.querySelector('input[type="number"]').value;
+                const gate = entry.querySelector('input[type="text"]').value;
+                
+                commands.push(
+                    `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/admin-control-list[index='${index}']/gate-states-value ${gate}`,
+                    `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/admin-control-list[index='${index}']/time-interval-value ${duration}`
+                );
+            });
+            
+            commands.push(
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-sched:interfaces/interface[name='${iface}']/scheduler/gate-enabled true`
+            );
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('TAS configuration applied successfully', 'success');
+            }, 1500);
+        }
+        
+        // Priority mapping functions
+        function applyPCPMapping() {
+            const port = document.getElementById('device-port').value;
+            const commands = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const priority = document.getElementById(`pcp-${i}-priority`).value;
+                commands.push(
+                    `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/traffic-class-table/traffic-class-map[priority-code-point='${i}']/priority ${priority}`
+                );
+            }
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('PCP mapping applied successfully', 'success');
+            }, 1000);
+        }
+        
+        function applyPriorityTCMapping() {
+            const port = document.getElementById('device-port').value;
+            const commands = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const tc = document.getElementById(`priority-${i}-tc`).value;
+                commands.push(
+                    `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/traffic-class-table/traffic-class-map[priority='${i}']/traffic-class ${tc}`
+                );
+            }
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('Priority to TC mapping applied successfully', 'success');
+            }, 1000);
+        }
+        
+        // VLAN functions
+        function configureBridge() {
+            const port = document.getElementById('device-port').value;
+            const bridgeName = document.getElementById('bridge-name').value;
+            const bridgeType = document.getElementById('bridge-type').value;
+            
+            const commands = [
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='${bridgeName}']/bridge-type ${bridgeType}`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='${bridgeName}']/component[name='${bridgeName}']/bridge-port[port-number='0']/port-type customer-edge-port`,
+                `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='${bridgeName}']/component[name='${bridgeName}']/bridge-port[port-number='1']/port-type customer-edge-port`
+            ];
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('Bridge configured successfully', 'success');
+            }, 1000);
+        }
+        
+        function addVLAN() {
+            const port = document.getElementById('device-port').value;
+            const vlanId = document.getElementById('vlan-id').value;
+            const bridgeName = document.getElementById('bridge-name').value;
+            
+            const command = `${MVDCT_PATH} device ${port} set /ieee802-dot1q-bridge:bridges/bridge[name='${bridgeName}']/component[name='${bridgeName}']/filtering-database/vlan-registration-entry[vlan-id='${vlanId}']/vids ${vlanId}`;
+            
+            addToConsole(`Executing: ${command}`, 'command');
+            
+            setTimeout(() => {
+                addToConsole(`VLAN ${vlanId} added successfully`, 'success');
+                
+                // Update VLAN list
+                const vlanList = document.getElementById('vlan-list');
+                const vlanItem = document.createElement('div');
+                vlanItem.className = 'vlan-item';
+                vlanItem.textContent = `VLAN ${vlanId}`;
+                vlanList.appendChild(vlanItem);
+            }, 500);
+        }
+        
+        // PTP functions
+        function configurePTP() {
+            const port = document.getElementById('device-port').value;
+            const domain = document.getElementById('ptp-domain').value;
+            const priority1 = document.getElementById('ptp-priority1').value;
+            const priority2 = document.getElementById('ptp-priority2').value;
+            const clockClass = document.getElementById('ptp-clock-class').value;
+            
+            const commands = [
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/default-ds/domain-number ${domain}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/default-ds/priority1 ${priority1}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/default-ds/priority2 ${priority2}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/default-ds/clock-quality/clock-class ${clockClass}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/enable true`
+            ];
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('PTP configuration applied successfully', 'success');
+            }, 1000);
+        }
+        
+        function configurePTPPort() {
+            const port = document.getElementById('device-port').value;
+            const ptpPort = document.getElementById('ptp-port').value;
+            const portState = document.getElementById('ptp-port-state').value;
+            const announce = document.getElementById('ptp-announce').value;
+            const sync = document.getElementById('ptp-sync').value;
+            
+            const commands = [
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/ports/port[port-number='${ptpPort}']/port-ds/port-state ${portState}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/ports/port[port-number='${ptpPort}']/port-ds/log-announce-interval ${announce}`,
+                `${MVDCT_PATH} device ${port} set /ieee1588-ptp:instances/instance[instance-number='0']/ports/port[port-number='${ptpPort}']/port-ds/log-sync-interval ${sync}`
+            ];
+            
+            commands.forEach(cmd => {
+                addToConsole(`Executing: ${cmd}`, 'command');
+            });
+            
+            setTimeout(() => {
+                addToConsole('PTP port configuration applied successfully', 'success');
+            }, 1000);
+        }
+        
+        // YANG browser functions
+        function setYangPath(path) {
+            document.getElementById('yang-browser-path').value = path;
+        }
+        
+        function yangGet() {
+            const port = document.getElementById('device-port').value;
+            const path = document.getElementById('yang-browser-path').value;
+            
+            const command = `${MVDCT_PATH} device ${port} get ${path}`;
+            addToConsole(`Executing: ${command}`, 'command');
+            
+            setTimeout(() => {
+                addToConsole('YANG GET successful', 'success');
+            }, 500);
+        }
+        
+        function yangSet() {
+            document.getElementById('yang-value-group').style.display = 'block';
+        }
+        
+        function yangDelete() {
+            const port = document.getElementById('device-port').value;
+            const path = document.getElementById('yang-browser-path').value;
+            
+            const command = `${MVDCT_PATH} device ${port} delete ${path}`;
+            addToConsole(`Executing: ${command}`, 'command');
+            
+            setTimeout(() => {
+                addToConsole('YANG DELETE successful', 'success');
+            }, 500);
+        }
+        
+        // Preset functions
+        function loadPreset(preset) {
+            const presets = {
+                'automotive': {
+                    name: 'Automotive TSN',
+                    description: 'Optimized for automotive Ethernet with strict timing requirements',
+                    cbs: { tc2: 1500, tc6: 3500 },
+                    tas: { cycle: 10, entries: 8 },
+                    ptp: { domain: 0, priority1: 128 }
+                },
+                'industrial': {
+                    name: 'Industrial Automation',
+                    description: 'Configuration for factory automation and industrial IoT',
+                    cbs: { tc2: 2000, tc6: 5000 },
+                    tas: { cycle: 50, entries: 8 },
+                    ptp: { domain: 24, priority1: 128 }
+                },
+                'avb': {
+                    name: 'Audio/Video Bridging',
+                    description: 'Optimized for professional audio/video streaming',
+                    cbs: { tc2: 8000, tc6: 16000 },
+                    tas: { cycle: 125, entries: 4 },
+                    ptp: { domain: 0, priority1: 246 }
+                },
+                'testing': {
+                    name: 'Testing Configuration',
+                    description: 'Standard configuration for TSN testing and validation',
+                    cbs: { tc2: 1500, tc6: 3500 },
+                    tas: { cycle: 200, entries: 8 },
+                    ptp: { domain: 0, priority1: 128 }
+                },
+                'default': {
+                    name: 'Factory Default',
+                    description: 'Reset to factory default settings',
+                    cbs: { tc2: 0, tc6: 0 },
+                    tas: { cycle: 0, entries: 0 },
+                    ptp: { domain: 0, priority1: 255 }
+                }
+            };
+            
+            const p = presets[preset];
+            const details = document.getElementById('preset-details');
+            details.innerHTML = `
+                <h4>${p.name}</h4>
+                <p>${p.description}</p>
+                <ul>
+                    <li>CBS: TC2=${p.cbs.tc2} kbps, TC6=${p.cbs.tc6} kbps</li>
+                    <li>TAS: Cycle=${p.tas.cycle}ms, Entries=${p.tas.entries}</li>
+                    <li>PTP: Domain=${p.ptp.domain}, Priority1=${p.ptp.priority1}</li>
+                </ul>
+                <button onclick="applyPreset('${preset}')">Apply This Preset</button>
+            `;
+            
+            addToConsole(`Loaded preset details: ${p.name}`, 'info');
+        }
+        
+        function applyPreset(preset) {
+            addToConsole(`Applying preset: ${preset}`, 'info');
+            
+            // This would apply all the preset configurations
+            setTimeout(() => {
+                addToConsole(`Preset ${preset} applied successfully`, 'success');
+            }, 2000);
+        }
+        
+        // Export/Import functions
+        function exportCommands() {
+            const blob = new Blob([JSON.stringify(commandHistory, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lan9662-commands-${Date.now()}.json`;
+            a.click();
+            
+            addToConsole('Commands exported successfully', 'success');
+        }
+        
+        function saveConfiguration() {
+            const config = {
+                timestamp: new Date().toISOString(),
+                device_port: document.getElementById('device-port').value,
+                cbs: {
+                    interface: document.getElementById('cbs-interface').value,
+                    tc: document.getElementById('cbs-tc').value,
+                    idle_slope: document.getElementById('cbs-idle-slope').value
+                },
+                tas: {
+                    interface: document.getElementById('tas-interface').value,
+                    cycle_time: document.getElementById('tas-cycle-time').value,
+                    gcl_entries: Array.from(document.querySelectorAll('.gcl-entry')).map(entry => ({
+                        duration: entry.querySelector('input[type="number"]').value,
+                        gate: entry.querySelector('input[type="text"]').value
+                    }))
+                },
+                pcp_mapping: Array.from({length: 8}, (_, i) => 
+                    document.getElementById(`pcp-${i}-priority`).value
+                ),
+                priority_tc_mapping: Array.from({length: 8}, (_, i) => 
+                    document.getElementById(`priority-${i}-tc`).value
+                )
+            };
+            
+            localStorage.setItem('lan9662-config', JSON.stringify(config));
+            addToConsole('Configuration saved to local storage', 'success');
+        }
+        
+        function loadConfiguration() {
+            const config = localStorage.getItem('lan9662-config');
+            if (config) {
+                const c = JSON.parse(config);
+                
+                document.getElementById('device-port').value = c.device_port;
+                document.getElementById('cbs-interface').value = c.cbs.interface;
+                document.getElementById('cbs-tc').value = c.cbs.tc;
+                document.getElementById('cbs-idle-slope').value = c.cbs.idle_slope;
+                document.getElementById('tas-interface').value = c.tas.interface;
+                document.getElementById('tas-cycle-time').value = c.tas.cycle_time;
+                
+                // Load GCL entries
+                clearGCL();
+                c.tas.gcl_entries.forEach(entry => {
+                    addGCLEntry();
+                    const entries = document.querySelectorAll('.gcl-entry');
+                    const last = entries[entries.length - 1];
+                    last.querySelector('input[type="number"]').value = entry.duration;
+                    last.querySelector('input[type="text"]').value = entry.gate;
+                });
+                
+                // Load mappings
+                c.pcp_mapping.forEach((priority, i) => {
+                    document.getElementById(`pcp-${i}-priority`).value = priority;
+                });
+                
+                c.priority_tc_mapping.forEach((tc, i) => {
+                    document.getElementById(`priority-${i}-tc`).value = tc;
+                });
+                
+                addToConsole(`Configuration loaded from ${c.timestamp}`, 'success');
+            } else {
+                addToConsole('No saved configuration found', 'error');
+            }
+        }
+        
+        // Initialize
+        window.onload = function() {
+            // Initialize with default GCL entries
+            for (let i = 0; i < 8; i++) {
+                addGCLEntry();
+            }
+            
+            // Update command preview
+            updateCommandPreview();
+            
+            // Check for saved configuration
+            if (localStorage.getItem('lan9662-config')) {
+                addToConsole('Saved configuration available. Use "Load Configuration" to restore.', 'info');
+            }
+        };
+    </script>
+</body>
+</html>

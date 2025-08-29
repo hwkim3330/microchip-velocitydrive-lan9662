@@ -14,29 +14,21 @@ from pathlib import Path
 class LAN9662BoardSetup:
     def __init__(self, port='/dev/ttyACM0', baudrate=115200):
         """보드 초기화"""
-        try:
-            self.serial = serial.Serial(port, baudrate, timeout=2)
-            print(f"✅ 보드 연결 성공: {port}")
-        except Exception as e:
-            print(f"❌ 보드 연결 실패: {e}")
-            self.serial = None
-            
+        self.port = port
+        self.mvdct_path = "/home/kim/Downloads/Microchip_VelocityDRIVE_CT-CLI-linux-2025.07.12/mvdct"
         self.config_history = []
         
     def send_command(self, cmd, wait_time=0.1):
         """명령어 전송 및 응답 받기"""
-        if not self.serial:
-            print("⚠️ 시리얼 연결이 없습니다")
-            return None
-            
-        # 명령어 전송
-        self.serial.write(f"{cmd}\n".encode())
-        time.sleep(wait_time)
+        import subprocess
         
-        # 응답 읽기
-        response = ""
-        while self.serial.in_waiting:
-            response += self.serial.read(self.serial.in_waiting).decode()
+        # mvdct를 사용한 명령어 실행
+        try:
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+            response = result.stdout + result.stderr
+        except Exception as e:
+            print(f"⚠️ 명령 실행 실패: {e}")
+            response = str(e)
             
         # 기록 저장
         self.config_history.append({
@@ -55,10 +47,10 @@ class LAN9662BoardSetup:
         print("\n🔍 보드 상태 확인 중...")
         
         checks = {
-            'version': 'dr version',
-            'interfaces': 'dr mup1cc coap get /ietf-interfaces/interfaces',
-            'bridge': 'dr mup1cc coap get /ieee802-dot1q-bridge/bridges',
-            'ptp': 'dr mup1cc coap get /ieee1588-ptp/instances'
+            'version': f'{self.mvdct_path} device {self.port} get /ietf-system:system-state/platform',
+            'interfaces': f'{self.mvdct_path} device {self.port} get /ietf-interfaces:interfaces',
+            'bridge': f'{self.mvdct_path} device {self.port} get /ieee802-dot1q-bridge:bridges',
+            'ptp': f'{self.mvdct_path} device {self.port} get /ieee1588-ptp:instances'
         }
         
         status = {}
@@ -74,17 +66,17 @@ class LAN9662BoardSetup:
         
         commands = [
             # 인터페이스 활성화
-            "dr mup1cc coap post /ietf-interfaces/interface=eth0/enabled true",
-            "dr mup1cc coap post /ietf-interfaces/interface=eth1/enabled true",
+            f"{self.mvdct_path} device {self.port} set /ietf-interfaces:interfaces/interface[name='eth0']/enabled true",
+            f"{self.mvdct_path} device {self.port} set /ietf-interfaces:interfaces/interface[name='eth1']/enabled true",
             
             # 브리지 설정
-            "dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/bridge-type provider-bridge",
-            "dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/bridge-port=0/port-type customer-edge-port",
-            "dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/bridge-port=1/port-type customer-edge-port",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/bridge-type provider-bridge",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/bridge-port[port-number='0']/port-type customer-edge-port",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/bridge-port[port-number='1']/port-type customer-edge-port",
             
             # VLAN 설정
-            "dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/filtering-database/vlan-registration-entry=100/vids 100",
-            "dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/filtering-database/vlan-registration-entry=10/vids 10",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/filtering-database/vlan-registration-entry[vlan-id='100']/vids 100",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/filtering-database/vlan-registration-entry[vlan-id='10']/vids 10",
         ]
         
         for cmd in commands:
@@ -102,7 +94,7 @@ class LAN9662BoardSetup:
         ]
         
         for pcp, priority in pcp_mapping:
-            cmd = f"dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic-class-table/pcp={pcp}/priority {priority}"
+            cmd = f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/traffic-class-table/traffic-class-map[priority-code-point='{pcp}']/priority {priority}"
             self.send_command(cmd)
             
         # Priority to TC 매핑
@@ -112,7 +104,7 @@ class LAN9662BoardSetup:
         ]
         
         for priority, tc in priority_to_tc:
-            cmd = f"dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic-class-table/priority={priority}/traffic-class {tc}"
+            cmd = f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-bridge:bridges/bridge[name='br0']/component[name='br0']/traffic-class-table/traffic-class-map[priority='{priority}']/traffic-class {tc}"
             self.send_command(cmd)
             
         # CBS idle-slope 설정
@@ -123,9 +115,9 @@ class LAN9662BoardSetup:
         
         for tc, idle_slope in cbs_configs:
             commands = [
-                f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/traffic-class={tc}/cbs/idle-slope {idle_slope}",
-                f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/traffic-class={tc}/cbs/send-slope -{idle_slope}",
-                f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/traffic-class={tc}/cbs/enabled true",
+                f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/traffic-class[index='{tc}']/credit-based-shaper/idle-slope {idle_slope}",
+                f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/traffic-class[index='{tc}']/credit-based-shaper/send-slope -{idle_slope}",
+                f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/traffic-class[index='{tc}']/credit-based-shaper/admin-idleslope-enabled true",
             ]
             
             for cmd in commands:
@@ -143,9 +135,9 @@ class LAN9662BoardSetup:
         
         # 관리자 설정
         admin_config = [
-            f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-base-time {base_time}",
-            "dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-cycle-time 200000000",  # 200ms in ns
-            "dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-control-list-length 8",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-base-time {base_time}",
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-cycle-time 200000000",  # 200ms in ns
+            f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-control-list-length 8",
         ]
         
         for cmd in admin_config:
@@ -165,15 +157,15 @@ class LAN9662BoardSetup:
         
         for index, duration, gate_state in gcl:
             commands = [
-                f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-control-list/{index}/time-interval {duration}",
-                f"dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-control-list/{index}/gate-states {gate_state}",
+                f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-control-list[index='{index}']/gate-states-value {gate_state}",
+                f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/admin-control-list[index='{index}']/time-interval-value {duration}",
             ]
             
             for cmd in commands:
                 self.send_command(cmd)
                 
         # TAS 활성화
-        self.send_command("dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/gate-enabled true")
+        self.send_command(f"{self.mvdct_path} device {self.port} set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/gate-enabled true")
         
         print("✅ TAS 설정 완료!")
         
