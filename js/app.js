@@ -438,3 +438,72 @@ window.closeModal = closeModal;
 window.showError = showError;
 window.showSuccess = showSuccess;
 window.showInfo = showInfo;
+
+// === Debug bindings (YANG/CoAP/UI) ===
+window.yangGet = async () => {
+  try { if (!app.yangBrowser) throw new Error('Not connected'); await app.yangBrowser.getValue(); }
+  catch(e){ showError(e.message); }
+};
+window.yangSet = async () => {
+  try { if (!app.yangBrowser) throw new Error('Not connected'); await app.yangBrowser.setValue(); }
+  catch(e){ showError(e.message); }
+};
+window.sendCoap = async () => {
+  try {
+    if (!app.controller) throw new Error('Not connected');
+    const method = document.getElementById('coap-method')?.value;
+    const uri = (document.getElementById('coap-uri')?.value||'').trim();
+    const payloadText = (document.getElementById('coap-payload')?.value||'').trim();
+    let payload = null; if (payloadText) { try { payload = JSON.parse(payloadText);} catch{ payload = payloadText; } }
+    let resp; switch(method){
+      case 'GET': resp = await app.controller.coap.get(uri); break;
+      case 'POST': resp = await app.controller.coap.post(uri,payload); break;
+      case 'PUT': resp = await app.controller.coap.put(uri,payload); break;
+      case 'DELETE': resp = await app.controller.coap.delete(uri); break;
+      case 'FETCH': resp = await app.controller.coap.fetch(uri,payload); break;
+    }
+    const out = document.getElementById('coap-response'); if (out) out.innerHTML = `<pre>${typeof resp==='object'?JSON.stringify(resp,null,2):String(resp)}</pre>`;
+  } catch(e){ showError('CoAP error: '+e.message); }
+};
+window.configurePort = async (index) => {
+  try{ if(!app.controller) throw new Error('Not connected');
+    const speed = document.getElementById(`port-${index}-speed`).value;
+    const duplex = document.getElementById(`port-${index}-duplex`).value;
+    await app.controller.configurePort(index,{speed,duplex}); showSuccess(`Port ${index} updated`);
+  } catch(e){ showError(e.message); }
+};
+window.createVlan = async () => {
+  try{ if(!app.controller) throw new Error('Not connected');
+    const id=parseInt(document.getElementById('vlan-id').value,10);
+    const name=document.getElementById('vlan-name').value;
+    const ports=Array.from(document.querySelectorAll('#vlan-ports-select input[type="checkbox"]')).filter(c=>c.checked).map(c=>parseInt(c.value,10));
+    await app.controller.createVlan(id,name,ports); showSuccess('VLAN created'); if(window.pageHandlers?.vlan) window.pageHandlers.vlan.load(app);
+  } catch(e){ showError(e.message); }
+};
+window.deleteVlan = async (id) => {
+  try{ if(!app.controller) throw new Error('Not connected'); await app.controller.deleteVlan(id); showSuccess('VLAN deleted'); if(window.pageHandlers?.vlan) window.pageHandlers.vlan.load(app);} catch(e){ showError(e.message); }
+};
+window.configurePTP = async () => {
+  try{ if(!app.controller) throw new Error('Not connected'); await app.controller.configurePTP({}); showSuccess('PTP configured'); } catch(e){ showError(e.message); }
+};
+window.addTasEntry = () => {
+  const c=document.getElementById('tas-entries'); if(!c) return; const i=c.children.length; const d=document.createElement('div'); d.className='tas-entry'; d.style.margin='6px 0'; d.innerHTML=`Gate(0x mask): <input id="tas-gate-${i}" value="0xFF" size="6"> Duration(ns): <input id="tas-dur-${i}" value="100000" size="10">`; c.appendChild(d);
+};
+window.configureTAS = async () => {
+  try{ if(!app.controller) throw new Error('Not connected');
+    const port=parseInt(document.getElementById('tas-port').value||'0',10);
+    const cycle=parseInt(document.getElementById('tas-cycle').value||'1000000',10);
+    const entries=[]; const c=document.getElementById('tas-entries'); Array.from(c?.children||[]).forEach((row,i)=>{ const g=document.getElementById(`tas-gate-${i}`).value; const d=parseInt(document.getElementById(`tas-dur-${i}`).value,10)||0; entries.push({gateStates:Number(g), timeInterval:d}); });
+    await app.controller.configureTAS(port,{entries,cycleTime:cycle}); showSuccess('TAS configured');
+  } catch(e){ showError(e.message); }
+};
+window.configurePreemption = async () => {
+  try{ if(!app.controller) throw new Error('Not connected'); const port=parseInt(document.getElementById('preempt-port').value||'0',10); const enabled=document.getElementById('preempt-enable').checked; await app.controller.configureFramePreemption(port,{enabled}); showSuccess('Frame preemption updated'); } catch(e){ showError(e.message); }
+};
+window.clearLogs = () => { const el=document.getElementById('log-container'); if(el) el.innerHTML=''; };
+window.exportLogs = () => { const el=document.getElementById('log-container'); const blob=new Blob([el?.innerText||''],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='logs.txt'; a.click(); };
+
+// Hook YANG render when switching to YANG page
+(function(){
+  const origSwitch = window.switchPage;
+})();
