@@ -1,8 +1,16 @@
-# LAN9662 VelocityDRIVE Control Interface
+# LAN9662 VelocityDRIVE TSN Control & Testing Suite
 
 🌐 **Live Demo: [https://hwkim3330.github.io/microchip-velocitydrive-lan9662/](https://hwkim3330.github.io/microchip-velocitydrive-lan9662/)**
 
-Web-based control interface for Microchip LAN9662 Ethernet switch using the VelocityDRIVE-SP platform.
+Complete web-based control interface and TSN performance testing suite for Microchip LAN9662 VelocityDRIVE platform.
+
+## 🎯 Quick Access Links
+
+- 🎛️ **[Board Control Center](https://hwkim3330.github.io/microchip-velocitydrive-lan9662/lan9662-control.html)** - Full WebSerial control interface
+- 🔧 **[TSN Configurator](https://hwkim3330.github.io/microchip-velocitydrive-lan9662/tsn-configurator.html)** - TSN-specific configuration tool
+- 📊 **[Performance Monitor](https://hwkim3330.github.io/microchip-velocitydrive-lan9662/tsn-test-tools/monitoring_dashboard.html)** - Real-time monitoring
+- 📚 **[TSN Guide (Korean)](https://github.com/hwkim3330/microchip-velocitydrive-lan9662/blob/main/tsn-test-tools/TSN_EXPLANATION.md)** - Complete TSN explanation
+- 📖 **[Korean Documentation](https://github.com/hwkim3330/microchip-velocitydrive-lan9662/blob/main/tsn-test-tools/README_KR.md)** - 한국어 문서
 
 ## ✨ Features
 
@@ -41,14 +49,26 @@ See [TSN Test Tools Documentation](./tsn-test-tools/README.md) for details.
 
 ### Requirements
 - Chrome or Edge browser (v89+) with WebSerial API support
-- LAN9662 device connected via USB/Serial
+- LAN9662 device connected via USB/Serial (typically `/dev/ttyACM0`)
 - Device running VelocityDRIVE-SP firmware
+- mvdct CLI tool (for command-line control)
 
-### Usage
+### Browser-Based Control (No Server Required)
 
-1. **Open the interface:** https://hwkim3330.github.io/microchip-velocitydrive-lan9662/
-2. **Connect device:** Click "Connect" and select your serial port
-3. **Configure:** Use the intuitive web interface to manage your device
+1. **Open Control Center:** https://hwkim3330.github.io/microchip-velocitydrive-lan9662/lan9662-control.html
+2. **Connect Device:** Click "Connect" and select your serial port
+3. **Configure:** Use tabs for CBS, TAS, Priority mapping, VLAN, PTP settings
+
+### Command-Line Control (mvdct)
+
+```bash
+# Path to mvdct tool
+cd /home/kim/Downloads/Microchip_VelocityDRIVE_CT-CLI-linux-2025.07.12/
+
+# Example commands
+./mvdct device /dev/ttyACM0 get /ietf-system:system-state/platform
+./mvdct device /dev/ttyACM0 set /path/to/yang/node value
+```
 
 ## 🔧 Protocol Implementation
 
