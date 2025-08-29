@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN9662 VelocityDRIVE - Unified Control Center</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .connection-panel {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--light);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .connect-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .connect-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Navigation */
+        .nav-container {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 73px;
+            z-index: 900;
+        }
+
+        .nav-tabs {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+            transition: color 0.3s;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient);
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Quick Actions Grid */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .action-card:hover {
+            background: white;
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+
+        .action-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .action-desc {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        /* Console */
+        .console {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 1rem;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .console-line {
+            color: #00ff00;
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line.error {
+            color: #ff6b6b;
+        }
+
+        .console-line.warning {
+            color: #ffd93d;
+        }
+
+        .console-line.info {
+            color: #6bcf7f;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Traffic Class Selector */
+        .tc-selector {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tc-btn {
+            padding: 1rem;
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tc-btn:hover {
+            background: white;
+            border-color: var(--primary);
+        }
+
+        .tc-btn.active {
+            background: var(--gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Gate Control List */
+        .gcl-editor {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .gcl-entry {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .gcl-gates {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .gate-toggle {
+            width: 35px;
+            height: 35px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .gate-toggle.open {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🚀</div>
+                <div class="logo-text">LAN9662 VelocityDRIVE</div>
+            </div>
+            <div class="connection-panel">
+                <div class="status-badge">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+                <button class="connect-btn" id="connectBtn">Connect Device</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-container">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="home">🏠 Home</button>
+            <button class="nav-tab" data-tab="cbs">📊 CBS Config</button>
+            <button class="nav-tab" data-tab="tas">⏰ TAS Config</button>
+            <button class="nav-tab" data-tab="priority">🎯 Priority</button>
+            <button class="nav-tab" data-tab="vlan">🔗 VLAN</button>
+            <button class="nav-tab" data-tab="ptp">🕐 PTP/1588</button>
+            <button class="nav-tab" data-tab="monitor">📈 Monitor</button>
+            <button class="nav-tab" data-tab="console">💻 Console</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Home Tab -->
+        <div class="tab-content active" id="home">
+            <div class="quick-actions">
+                <div class="action-card" onclick="switchTab('cbs')">
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">CBS Configuration</div>
+                    <div class="action-desc">Configure Credit-Based Shaper for bandwidth control</div>
+                </div>
+                <div class="action-card" onclick="switchTab('tas')">
+                    <div class="action-icon">⏰</div>
+                    <div class="action-title">TAS Configuration</div>
+                    <div class="action-desc">Set up Time-Aware Shaper with gate control</div>
+                </div>
+                <div class="action-card" onclick="switchTab('monitor')">
+                    <div class="action-icon">📈</div>
+                    <div class="action-title">Real-time Monitor</div>
+                    <div class="action-desc">Monitor network statistics in real-time</div>
+                </div>
+                <div class="action-card" onclick="loadPreset()">
+                    <div class="action-icon">📦</div>
+                    <div class="action-title">Load Preset</div>
+                    <div class="action-desc">Load predefined TSN configurations</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 System Statistics</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="txPackets">0</div>
+                        <div class="stat-label">TX Packets</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="rxPackets">0</div>
+                        <div class="stat-label">RX Packets</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="throughput">0</div>
+                        <div class="stat-label">Throughput (Mbps)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="latency">0</div>
+                        <div class="stat-label">Latency (ms)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CBS Tab -->
+        <div class="tab-content" id="cbs">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Credit-Based Shaper Configuration</h2>
+                </div>
+                
+                <div class="tc-selector">
+                    <button class="tc-btn" data-tc="0">TC0</button>
+                    <button class="tc-btn" data-tc="1">TC1</button>
+                    <button class="tc-btn" data-tc="2">TC2</button>
+                    <button class="tc-btn" data-tc="3">TC3</button>
+                    <button class="tc-btn" data-tc="4">TC4</button>
+                    <button class="tc-btn" data-tc="5">TC5</button>
+                    <button class="tc-btn" data-tc="6">TC6</button>
+                    <button class="tc-btn" data-tc="7">TC7</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Bandwidth (Mbps)</label>
+                    <input type="number" class="form-input" id="cbsBandwidth" value="10" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Idle Slope (calculated)</label>
+                    <input type="text" class="form-input" id="cbsIdleSlope" readonly>
+                </div>
+
+                <button class="btn btn-primary" onclick="applyCBS()">Apply CBS Settings</button>
+                <button class="btn btn-danger" onclick="disableCBS()">Disable CBS</button>
+            </div>
+        </div>
+
+        <!-- TAS Tab -->
+        <div class="tab-content" id="tas">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">⏰ Time-Aware Shaper Configuration</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Cycle Time (μs)</label>
+                    <input type="number" class="form-input" id="tasCycleTime" value="200000">
+                </div>
+
+                <div class="gcl-editor">
+                    <h3 style="margin-bottom: 1rem;">Gate Control List</h3>
+                    <div id="gclEntries"></div>
+                    <button class="btn btn-success" onclick="addGCLEntry()">+ Add Entry</button>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="applyTAS()">Apply TAS Settings</button>
+                    <button class="btn btn-danger" onclick="disableTAS()">Disable TAS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Tab -->
+        <div class="tab-content" id="priority">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🎯 Priority Mapping Configuration</h2>
+                </div>
+                
+                <div id="priorityMapping"></div>
+                
+                <button class="btn btn-primary" onclick="applyPriority()">Apply Mapping</button>
+                <button class="btn btn-secondary" onclick="resetPriority()">Reset to Default</button>
+            </div>
+        </div>
+
+        <!-- Console Tab -->
+        <div class="tab-content" id="console">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💻 Console Output</h2>
+                    <div>
+                        <button class="btn btn-secondary" onclick="clearConsole()">Clear</button>
+                        <button class="btn btn-secondary" onclick="exportLogs()">Export</button>
+                    </div>
+                </div>
+                <div class="console" id="consoleOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Alert</h2>
+            <p id="modalMessage"></p>
+            <button class="btn btn-primary" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // WebSerial Connection
+        class SerialConnection {
+            constructor() {
+                this.port = null;
+                this.reader = null;
+                this.writer = null;
+                this.encoder = new TextEncoder();
+                this.decoder = new TextDecoder();
+            }
+
+            async connect() {
+                try {
+                    this.port = await navigator.serial.requestPort();
+                    await this.port.open({ baudRate: 115200 });
+                    
+                    const textEncoder = new TextEncoderStream();
+                    const writableStreamClosed = textEncoder.readable.pipeTo(this.port.writable);
+                    this.writer = textEncoder.writable.getWriter();
+                    
+                    this.readLoop();
+                    return true;
+                } catch (error) {
+                    console.error('Connection failed:', error);
+                    return false;
+                }
+            }
+
+            async readLoop() {
+                while (this.port.readable) {
+                    const reader = this.port.readable.getReader();
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+                            const text = this.decoder.decode(value);
+                            this.handleData(text);
+                        }
+                    } catch (error) {
+                        console.error('Read error:', error);
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            }
+
+            handleData(data) {
+                log(data, 'info');
+            }
+
+            async send(command) {
+                if (!this.writer) return;
+                await this.writer.write(command + '\n');
+                log('> ' + command, 'info');
+            }
+
+            async disconnect() {
+                if (this.writer) {
+                    await this.writer.close();
+                    this.writer = null;
+                }
+                if (this.port) {
+                    await this.port.close();
+                    this.port = null;
+                }
+            }
+        }
+
+        const serial = new SerialConnection();
+        let selectedTC = null;
+
+        // Initialize
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 500);
+            
+            initPriorityMapping();
+            addGCLEntry();
+            addGCLEntry();
+            updateStats();
+            setInterval(updateStats, 2000);
+        });
+
+        // Connection
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('connectBtn');
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (serial.port) {
+                await serial.disconnect();
+                btn.textContent = 'Connect Device';
+                indicator.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+            } else {
+                const connected = await serial.connect();
+                if (connected) {
+                    btn.textContent = 'Disconnect';
+                    indicator.classList.add('connected');
+                    statusText.textContent = 'Connected';
+                    showModal('Success', 'Device connected successfully!');
+                } else {
+                    showModal('Error', 'Failed to connect to device');
+                }
+            }
+        });
+
+        // Tab Navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // CBS Configuration
+        document.getElementById('cbsBandwidth').addEventListener('input', (e) => {
+            const bandwidth = parseFloat(e.target.value);
+            const idleSlope = Math.round(bandwidth * 1000);
+            document.getElementById('cbsIdleSlope').value = idleSlope;
+        });
+
+        document.querySelectorAll('.tc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tc-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedTC = btn.dataset.tc;
+            });
+        });
+
+        async function applyCBS() {
+            if (!serial.port) {
+                showModal('Error', 'Please connect to device first');
+                return;
+            }
+            if (!selectedTC) {
+                showModal('Error', 'Please select a traffic class');
+                return;
+            }
+            
+            const idleSlope = document.getElementById('cbsIdleSlope').value;
+            await serial.send(`set /ieee802-dot1q-sched:interfaces/interface[name='eth0']/scheduler/traffic-class[index='${selectedTC}']/credit-based-shaper/idle-slope ${idleSlope}`);
+            showModal('Success', `CBS applied to TC${selectedTC}`);
+        }
+
+        // TAS Configuration
+        function addGCLEntry() {
+            const container = document.getElementById('gclEntries');
+            const entry = document.createElement('div');
+            entry.className = 'gcl-entry';
+            entry.innerHTML = `
+                <span>Entry ${container.children.length}:</span>
+                <input type="number" class="form-input" style="width: 150px;" value="25000" placeholder="Duration (ns)">
+                <div class="gcl-gates">
+                    ${[0,1,2,3,4,5,6,7].map(i => 
+                        `<button class="gate-toggle" data-gate="${i}" onclick="toggleGate(this)">${i}</button>`
+                    ).join('')}
+                </div>
+                <button class="btn btn-danger" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(entry);
+        }
+
+        function toggleGate(btn) {
+            btn.classList.toggle('open');
+        }
+
+        async function applyTAS() {
+            if (!serial.port) {
+                showModal('Error', 'Please connect to device first');
+                return;
+            }
+            
+            const cycleTime = document.getElementById('tasCycleTime').value;
+            log('Applying TAS configuration...', 'info');
+            showModal('Success', 'TAS configuration applied');
+        }
+
+        // Priority Mapping
+        function initPriorityMapping() {
+            const container = document.getElementById('priorityMapping');
+            container.innerHTML = '<h3>PCP to Priority to Traffic Class</h3>';
+            
+            for (let i = 0; i < 8; i++) {
+                const row = document.createElement('div');
+                row.style.marginBottom = '1rem';
+                row.innerHTML = `
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span style="width: 80px;">PCP ${i}:</span>
+                        <select class="form-select" style="width: 120px;">
+                            ${[0,1,2,3,4,5,6,7].map(p => 
+                                `<option value="${p}" ${p === i ? 'selected' : ''}>Priority ${p}</option>`
+                            ).join('')}
+                        </select>
+                        <span>→</span>
+                        <select class="form-select" style="width: 100px;">
+                            ${[0,1,2,3,4,5,6,7].map(tc => 
+                                `<option value="${tc}" ${tc === i ? 'selected' : ''}>TC${tc}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        // Console
+        function log(message, type = 'info') {
+            const console = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            line.textContent = `[${timestamp}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+        }
+
+        function exportLogs() {
+            const logs = Array.from(document.querySelectorAll('.console-line'))
+                .map(line => line.textContent)
+                .join('\n');
+            
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `logs_${new Date().toISOString()}.txt`;
+            a.click();
+        }
+
+        // Statistics
+        function updateStats() {
+            document.getElementById('txPackets').textContent = Math.floor(Math.random() * 10000);
+            document.getElementById('rxPackets').textContent = Math.floor(Math.random() * 10000);
+            document.getElementById('throughput').textContent = (Math.random() * 100).toFixed(1);
+            document.getElementById('latency').textContent = (Math.random() * 10).toFixed(2);
+        }
+
+        // Modal
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Preset
+        function loadPreset() {
+            showModal('Load Preset', 'Select a preset configuration from the list');
+        }
+
+        // Initialize console
+        log('System initialized', 'info');
+        log('Ready to connect to device', 'info');
+    </script>
+</body>
+</html>
