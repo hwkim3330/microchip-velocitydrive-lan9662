@@ -7,6 +7,7 @@ export class WebSerialConnection {
         this.port = null;
         this.reader = null;
         this.writer = null;
+        this.rawWriter = null; // For binary data
         this.readableStreamClosed = null;
         this.writableStreamClosed = null;
         this.isConnected = false;

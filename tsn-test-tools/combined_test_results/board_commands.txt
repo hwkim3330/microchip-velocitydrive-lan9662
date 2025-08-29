@@ -14,7 +14,7 @@ dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic
 dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic-class-table/pcp=7/priority 2
 dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic-class-table/priority=2/traffic-class 2
 dr mup1cc coap post /ieee802-dot1q-bridge/bridges/bridge=br0/component=0/traffic-class-table/priority=6/traffic-class 6
-dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-base-time 1756446389092876544
+dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-base-time 1756447865579813120
 dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-cycle-time 200000000
 dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-control-list/0/time-interval 25000000
 dr mup1cc coap post /ieee802-dot1q-sched/interfaces/interface=eth0/scheduler/admin-control-list/0/gate-states 1
