@@ -26,6 +26,17 @@ Web-based control interface for Microchip LAN9662 Ethernet switch using the Velo
 - IEEE 802.1CB FRER (Frame Replication and Elimination)
 - Frame Preemption (802.1Qbu)
 
+## 🧪 TSN Performance Testing
+
+Comprehensive TSN performance testing suite available in `tsn-test-tools/` directory:
+
+- **CBS Test**: Priority mapping with bandwidth control (1.5/3.5 Mbps)
+- **TAS Test**: 8-queue multi-TC with 200ms cycle time
+- **Latency Test**: Priority-based latency analysis (0.5-2.0ms)
+- **Real-time Monitor**: Live performance dashboard
+
+See [TSN Test Tools Documentation](./tsn-test-tools/README.md) for details.
+
 ## 🚀 Quick Start
 
 ### Requirements
