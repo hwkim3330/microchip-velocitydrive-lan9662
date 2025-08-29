@@ -529,7 +529,7 @@ https://hwkim3330.github.io/microchip-velocitydrive-lan9662/tsn-test-tools/
 
 ---
 
-**작성자**: 김진성  
+**작성자**: 김현우  
 **버전**: 1.0  
 **날짜**: 2024년 8월 29일  
 **문의**: https://github.com/hwkim3330/microchip-velocitydrive-lan9662/issues
