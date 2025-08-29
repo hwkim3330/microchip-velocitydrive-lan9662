@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAN9662 실제 보드 제어</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --text: #334155;
+            --text-light: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .connection-panel {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--light);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .connect-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .connect-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .connect-btn:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-item {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.25rem;
+            background: none;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--light);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Content */
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 600px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .device-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+
+        .input,
+        .select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .input:focus,
+        .select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Console */
+        .console {
+            background: #0d1117;
+            color: #58a6ff;
+            border-radius: 8px;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .console-line {
+            margin-bottom: 0.25rem;
+            white-space: pre-wrap;
+        }
+
+        .console-line.send {
+            color: #7ee787;
+        }
+
+        .console-line.receive {
+            color: #58a6ff;
+        }
+
+        .console-line.error {
+            color: #f85149;
+        }
+
+        .console-line.info {
+            color: #a5a5a5;
+        }
+
+        /* Traffic Classes */
+        .tc-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tc-item {
+            padding: 0.75rem;
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .tc-item:hover {
+            background: white;
+            border-color: var(--primary);
+        }
+
+        .tc-item.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app {
+                padding: 0.5rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .connection-panel {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span>🚀</span>
+                    LAN9662 VelocityDRIVE 실제 제어
+                </h1>
+                <div class="connection-panel">
+                    <div class="status">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">연결 대기중</span>
+                    </div>
+                    <button class="connect-btn" id="connectBtn">보드 연결</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="nav-section">
+                    <div class="nav-title">제어</div>
+                    <button class="nav-item active" data-section="dashboard">대시보드</button>
+                    <button class="nav-item" data-section="cbs">CBS 설정</button>
+                    <button class="nav-item" data-section="tas">TAS 설정</button>
+                    <button class="nav-item" data-section="priority">Priority 매핑</button>
+                    <button class="nav-item" data-section="vlan">VLAN 관리</button>
+                    <button class="nav-item" data-section="ptp">PTP/1588</button>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-title">진단</div>
+                    <button class="nav-item" data-section="console">콘솔</button>
+                    <button class="nav-item" data-section="raw">Raw 통신</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="content">
+                <!-- Dashboard Section -->
+                <div class="section active" id="dashboard">
+                    <h2 class="section-title">시스템 대시보드</h2>
+                    
+                    <div class="alert alert-info" id="connectionAlert">
+                        보드와 연결하려면 "보드 연결" 버튼을 클릭하세요.
+                    </div>
+                    
+                    <div id="dashboardContent" style="display: none;">
+                        <div class="form-group">
+                            <button class="btn btn-primary" onclick="refreshAll()">
+                                <span class="loading" id="refreshLoader" style="display: none;"></span>
+                                전체 새로고침
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CBS Section -->
+                <div class="section" id="cbs">
+                    <h2 class="section-title">CBS (Credit-Based Shaper) 설정</h2>
+                    
+                    <div class="form-group">
+                        <label class="label">Traffic Class 선택</label>
+                        <div class="tc-grid">
+                            <div class="tc-item" data-tc="0">TC0</div>
+                            <div class="tc-item" data-tc="1">TC1</div>
+                            <div class="tc-item" data-tc="2">TC2</div>
+                            <div class="tc-item" data-tc="3">TC3</div>
+                            <div class="tc-item" data-tc="4">TC4</div>
+                            <div class="tc-item" data-tc="5">TC5</div>
+                            <div class="tc-item" data-tc="6">TC6</div>
+                            <div class="tc-item" data-tc="7">TC7</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label">대역폭 (Mbps)</label>
+                        <input type="number" class="input" id="cbsBandwidth" value="10" step="0.1" min="0" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label">Idle Slope (자동 계산)</label>
+                        <input type="text" class="input" id="cbsIdleSlope" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="applyCBS()" disabled id="cbsApplyBtn">CBS 적용</button>
+                        <button class="btn btn-danger" onclick="disableCBS()" disabled id="cbsDisableBtn">CBS 비활성화</button>
+                    </div>
+                </div>
+
+                <!-- TAS Section -->
+                <div class="section" id="tas">
+                    <h2 class="section-title">TAS (Time-Aware Shaper) 설정</h2>
+                    
+                    <div class="form-group">
+                        <label class="label">사이클 시간 (μs)</label>
+                        <input type="number" class="input" id="tasCycleTime" value="200000">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label">베이스 시간 (자동 설정)</label>
+                        <input type="text" class="input" id="tasBaseTime" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="applyTAS()" disabled id="tasApplyBtn">TAS 적용</button>
+                        <button class="btn btn-danger" onclick="disableTAS()" disabled id="tasDisableBtn">TAS 비활성화</button>
+                    </div>
+                </div>
+
+                <!-- Console Section -->
+                <div class="section" id="console">
+                    <h2 class="section-title">통신 콘솔</h2>
+                    
+                    <div class="console" id="consoleOutput"></div>
+                    
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <button class="btn btn-outline" onclick="clearConsole()">콘솔 지우기</button>
+                        <button class="btn btn-outline" onclick="exportLogs()">로그 내보내기</button>
+                    </div>
+                </div>
+
+                <!-- Raw Communication Section -->
+                <div class="section" id="raw">
+                    <h2 class="section-title">Raw 통신 테스트</h2>
+                    
+                    <div class="form-group">
+                        <label class="label">YANG 경로</label>
+                        <input type="text" class="input" id="yangPath" 
+                               value="/ietf-interfaces:interfaces" 
+                               placeholder="/ieee802-dot1q-sched:interfaces">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="label">명령어</label>
+                        <select class="select" id="yangCommand">
+                            <option value="get">GET (조회)</option>
+                            <option value="set">SET (설정)</option>
+                            <option value="delete">DELETE (삭제)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="valueGroup" style="display: none;">
+                        <label class="label">값</label>
+                        <input type="text" class="input" id="yangValue" placeholder="설정할 값">
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="sendYangCommand()" disabled id="yangSendBtn">전송</button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Info Panel -->
+            <aside class="info-panel">
+                <h3 style="margin-bottom: 1rem; font-size: 1rem;">디바이스 정보</h3>
+                
+                <div class="device-info" id="deviceInfo">
+                    <div class="info-item">
+                        <span class="info-label">상태</span>
+                        <span class="info-value" id="deviceStatus">연결 안됨</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">버전</span>
+                        <span class="info-value" id="deviceVersion">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">모델</span>
+                        <span class="info-value" id="deviceModel">LAN9662</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">YANG 카탈로그</span>
+                        <span class="info-value" id="yangCatalog">-</span>
+                    </div>
+                </div>
+
+                <h4 style="margin: 1.5rem 0 1rem 0; font-size: 0.875rem;">통신 통계</h4>
+                
+                <div class="device-info" id="commStats">
+                    <div class="info-item">
+                        <span class="info-label">전송</span>
+                        <span class="info-value" id="txCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">수신</span>
+                        <span class="info-value" id="rxCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">에러</span>
+                        <span class="info-value" id="errorCount">0</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Include JavaScript libraries -->
+    <script src="js/mup1-protocol.js"></script>
+    <script src="js/velocitydrive-client.js"></script>
+    
+    <script>
+        // Global variables
+        let client = null;
+        let selectedTC = null;
+        let txCount = 0;
+        let rxCount = 0;
+        let errorCount = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('시스템 초기화됨', 'info');
+            updateBaseTime();
+            calculateIdleSlope();
+            
+            // Check WebSerial support
+            if (!('serial' in navigator)) {
+                log('WebSerial API를 지원하지 않는 브라우저입니다', 'error');
+                showAlert('이 브라우저는 WebSerial API를 지원하지 않습니다. Chrome 89+ 사용을 권장합니다.', 'error');
+            }
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Update active nav
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Show section
+                const sectionId = item.dataset.section;
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(sectionId).classList.add('active');
+            });
+        });
+
+        // Connection management
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('connectBtn');
+            
+            if (!client || !client.isConnected()) {
+                try {
+                    btn.disabled = true;
+                    btn.textContent = '연결 중...';
+                    
+                    await connectToDevice();
+                    
+                } catch (error) {
+                    log(`연결 실패: ${error.message}`, 'error');
+                    showAlert(`연결 실패: ${error.message}`, 'error');
+                    btn.textContent = '보드 연결';
+                    btn.disabled = false;
+                }
+            } else {
+                await disconnectFromDevice();
+            }
+        });
+
+        // Connect to device
+        async function connectToDevice() {
+            client = new VelocityDriveClient();
+            
+            // Set up event listeners
+            client.on('connected', () => {
+                log('보드 연결됨', 'info');
+                updateConnectionStatus(true);
+            });
+            
+            client.on('disconnected', () => {
+                log('보드 연결 해제됨', 'info');
+                updateConnectionStatus(false);
+            });
+            
+            client.on('deviceDiscovered', (deviceInfo) => {
+                log(`디바이스 발견: ${deviceInfo.version}`, 'info');
+                updateDeviceInfo(deviceInfo);
+            });
+            
+            client.on('yangCatalogReceived', (catalogId) => {
+                log(`YANG 카탈로그 수신: ${catalogId}`, 'info');
+                document.getElementById('yangCatalog').textContent = catalogId.substring(0, 8) + '...';
+            });
+            
+            client.on('rawData', (data) => {
+                if (data.direction === 'send') {
+                    txCount++;
+                    log(`전송: ${formatBytes(data.data)}`, 'send');
+                } else {
+                    rxCount++;
+                    log(`수신: ${formatBytes(data.data)}`, 'receive');
+                }
+                updateCommStats();
+            });
+            
+            client.on('error', (error) => {
+                errorCount++;
+                log(`에러: ${error.message}`, 'error');
+                updateCommStats();
+            });
+            
+            // Connect
+            await client.connect();
+        }
+
+        // Disconnect from device
+        async function disconnectFromDevice() {
+            if (client) {
+                await client.disconnect();
+                client = null;
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const connectBtn = document.getElementById('connectBtn');
+            
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = '연결됨';
+                connectBtn.textContent = '연결 해제';
+                connectBtn.disabled = false;
+                
+                // Enable controls
+                document.querySelectorAll('.btn').forEach(btn => {
+                    if (btn.id !== 'connectBtn') {
+                        btn.disabled = false;
+                    }
+                });
+                
+                document.getElementById('connectionAlert').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = '연결 안됨';
+                connectBtn.textContent = '보드 연결';
+                connectBtn.disabled = false;
+                
+                // Disable controls
+                document.querySelectorAll('.btn').forEach(btn => {
+                    if (btn.id !== 'connectBtn') {
+                        btn.disabled = true;
+                    }
+                });
+                
+                document.getElementById('connectionAlert').style.display = 'block';
+                document.getElementById('dashboardContent').style.display = 'none';
+            }
+        }
+
+        // Update device info
+        function updateDeviceInfo(deviceInfo) {
+            document.getElementById('deviceStatus').textContent = '온라인';
+            document.getElementById('deviceVersion').textContent = deviceInfo.version;
+        }
+
+        // Update communication stats
+        function updateCommStats() {
+            document.getElementById('txCount').textContent = txCount;
+            document.getElementById('rxCount').textContent = rxCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+
+        // Traffic Class selection
+        document.querySelectorAll('.tc-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.tc-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                selectedTC = item.dataset.tc;
+                log(`Traffic Class ${selectedTC} 선택됨`, 'info');
+            });
+        });
+
+        // CBS bandwidth calculation
+        document.getElementById('cbsBandwidth').addEventListener('input', calculateIdleSlope);
+        
+        function calculateIdleSlope() {
+            const bandwidth = parseFloat(document.getElementById('cbsBandwidth').value) || 0;
+            const idleSlope = Math.round(bandwidth * 1000); // Mbps to Kbps
+            document.getElementById('cbsIdleSlope').value = idleSlope;
+        }
+
+        // TAS base time update
+        function updateBaseTime() {
+            const baseTime = Date.now() * 1000000; // Current time in nanoseconds
+            document.getElementById('tasBaseTime').value = baseTime;
+        }
+
+        // CBS operations
+        async function applyCBS() {
+            if (!selectedTC) {
+                showAlert('Traffic Class를 먼저 선택하세요', 'error');
+                return;
+            }
+            
+            try {
+                const idleSlope = parseInt(document.getElementById('cbsIdleSlope').value);
+                await client.setCBSConfig(selectedTC, idleSlope);
+                log(`CBS TC${selectedTC} 적용 완료 (${idleSlope} kbps)`, 'info');
+                showAlert(`CBS TC${selectedTC} 설정이 적용되었습니다`, 'success');
+            } catch (error) {
+                log(`CBS 적용 실패: ${error.message}`, 'error');
+                showAlert(`CBS 적용 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function disableCBS() {
+            if (!selectedTC) {
+                showAlert('Traffic Class를 먼저 선택하세요', 'error');
+                return;
+            }
+            
+            try {
+                await client.setCBSConfig(selectedTC, 0, 0);
+                log(`CBS TC${selectedTC} 비활성화 완료`, 'info');
+                showAlert(`CBS TC${selectedTC}가 비활성화되었습니다`, 'success');
+            } catch (error) {
+                log(`CBS 비활성화 실패: ${error.message}`, 'error');
+                showAlert(`CBS 비활성화 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // TAS operations
+        async function applyTAS() {
+            try {
+                const cycleTime = parseInt(document.getElementById('tasCycleTime').value);
+                const baseTime = parseInt(document.getElementById('tasBaseTime').value);
+                
+                // Create simple GCL with 8 equal time slots
+                const slotTime = Math.floor(cycleTime / 8);
+                const gclEntries = [];
+                
+                for (let i = 0; i < 8; i++) {
+                    gclEntries.push({
+                        gateStates: 1 << i, // One gate open at a time
+                        timeInterval: slotTime
+                    });
+                }
+                
+                await client.setTASConfig(cycleTime, baseTime, gclEntries);
+                log(`TAS 적용 완료 (${cycleTime}μs cycle)`, 'info');
+                showAlert('TAS 설정이 적용되었습니다', 'success');
+            } catch (error) {
+                log(`TAS 적용 실패: ${error.message}`, 'error');
+                showAlert(`TAS 적용 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function disableTAS() {
+            try {
+                // Disable by setting all gates open
+                const cycleTime = parseInt(document.getElementById('tasCycleTime').value);
+                const baseTime = parseInt(document.getElementById('tasBaseTime').value);
+                
+                const gclEntries = [{
+                    gateStates: 0xFF, // All gates open
+                    timeInterval: cycleTime
+                }];
+                
+                await client.setTASConfig(cycleTime, baseTime, gclEntries);
+                log('TAS 비활성화 완료', 'info');
+                showAlert('TAS가 비활성화되었습니다', 'success');
+            } catch (error) {
+                log(`TAS 비활성화 실패: ${error.message}`, 'error');
+                showAlert(`TAS 비활성화 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // YANG command handling
+        document.getElementById('yangCommand').addEventListener('change', (e) => {
+            const valueGroup = document.getElementById('valueGroup');
+            valueGroup.style.display = e.target.value === 'set' ? 'block' : 'none';
+        });
+
+        async function sendYangCommand() {
+            const path = document.getElementById('yangPath').value;
+            const command = document.getElementById('yangCommand').value;
+            const value = document.getElementById('yangValue').value;
+            
+            if (!path) {
+                showAlert('YANG 경로를 입력하세요', 'error');
+                return;
+            }
+            
+            try {
+                let result;
+                
+                switch (command) {
+                    case 'get':
+                        result = await client.yangGet(path);
+                        break;
+                    case 'set':
+                        if (!value) {
+                            showAlert('설정할 값을 입력하세요', 'error');
+                            return;
+                        }
+                        result = await client.yangSet(path, value);
+                        break;
+                    case 'delete':
+                        result = await client.yangDelete(path);
+                        break;
+                }
+                
+                log(`YANG ${command.toUpperCase()} ${path}: ${JSON.stringify(result)}`, 'info');
+                showAlert(`명령어가 성공적으로 실행되었습니다`, 'success');
+                
+            } catch (error) {
+                log(`YANG 명령어 실패: ${error.message}`, 'error');
+                showAlert(`명령어 실행 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const console = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            line.textContent = `[${timestamp}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+            log('콘솔이 지워졌습니다', 'info');
+        }
+
+        function exportLogs() {
+            const logs = Array.from(document.querySelectorAll('.console-line'))
+                .map(line => line.textContent)
+                .join('\n');
+            
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lan9662_logs_${new Date().toISOString()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function formatBytes(data) {
+            if (data instanceof Uint8Array) {
+                return Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+            }
+            return data.toString();
+        }
+
+        function showAlert(message, type = 'info') {
+            // Create temporary alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            const container = document.querySelector('.section.active');
+            container.insertBefore(alert, container.firstChild);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        async function refreshAll() {
+            const loader = document.getElementById('refreshLoader');
+            loader.style.display = 'inline-block';
+            
+            try {
+                // Refresh device info and status
+                if (client && client.isConnected()) {
+                    const interfaces = await client.getInterfaces();
+                    const bridges = await client.getBridges();
+                    
+                    log('시스템 정보 새로고침 완료', 'info');
+                    showAlert('시스템 정보가 새로고침되었습니다', 'success');
+                } else {
+                    showAlert('보드가 연결되지 않았습니다', 'error');
+                }
+            } catch (error) {
+                log(`새로고침 실패: ${error.message}`, 'error');
+                showAlert(`새로고침 실패: ${error.message}`, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

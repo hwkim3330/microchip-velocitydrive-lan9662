@@ -40,14 +40,9 @@ export class WebSerialConnection {
                 flowControl: 'none'
             });
 
-            // Setup streams
-            const textDecoder = new TextDecoderStream();
-            this.readableStreamClosed = this.port.readable.pipeTo(textDecoder.writable);
-            this.reader = textDecoder.readable.getReader();
-
-            const textEncoder = new TextEncoderStream();
-            this.writableStreamClosed = textEncoder.readable.pipeTo(this.port.writable);
-            this.writer = textEncoder.writable.getWriter();
+            // Setup raw byte streams (binary-safe)
+            this.reader = this.port.readable.getReader();
+            this.writer = this.port.writable.getWriter();
 
             this.isConnected = true;
             this.updateStatus('connected');
@@ -106,13 +101,8 @@ export class WebSerialConnection {
         }
 
         try {
-            if (data instanceof Uint8Array) {
-                // Convert binary data to string for text encoder
-                const str = String.fromCharCode.apply(null, data);
-                await this.writer.write(str);
-            } else {
-                await this.writer.write(data);
-            }
+            const bytes = data instanceof Uint8Array ? data : new TextEncoder().encode(String(data));
+            await this.writer.write(bytes);
         } catch (error) {
             console.error('Send error:', error);
             throw error;
@@ -127,11 +117,10 @@ export class WebSerialConnection {
             throw new Error('Not connected');
         }
 
-        const writer = this.port.writable.getWriter();
         try {
-            await writer.write(bytes);
-        } finally {
-            writer.releaseLock();
+            await this.writer.write(bytes);
+        } catch (e) {
+            throw e;
         }
     }
 
@@ -147,10 +136,8 @@ export class WebSerialConnection {
                 }
                 
                 if (value) {
-                    // Convert string to bytes
-                    const encoder = new TextEncoder();
-                    const bytes = encoder.encode(value);
-                    this.handleIncomingData(bytes);
+                    // Value is Uint8Array
+                    this.handleIncomingData(value);
                 }
             } catch (error) {
                 console.error('Read error:', error);
