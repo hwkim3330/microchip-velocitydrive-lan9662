@@ -313,7 +313,7 @@ export class LAN966xController {
                     this.emit('announcement', decoded.data);
                     break;
                 case 'C':
-                    this.coap.handleResponse(decoded.data);
+                    this.coap.handleResponse(decoded.data, frame);
                     break;
                 case 'S':
                     this.emit('system-response', decoded.data);

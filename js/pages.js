@@ -211,6 +211,12 @@ function createCoapPage() {
             <button class="action-btn" onclick="sendCoap()">Send Request</button>
         </div>
         <div class="card" style="margin-top: 20px;">
+            <h3 class="card-title">Recent Requests</h3>
+            <div id="coap-history" class="code-editor" style="max-height: 220px; overflow-y: auto;">
+                <pre>No history</pre>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 20px;">
             <h3 class="card-title">Response</h3>
             <div id="coap-response" class="code-editor">
                 <pre>No response yet</pre>

@@ -39,24 +39,29 @@ export class CoAPClient {
      * Send CoAP request
      */
     async request(method, uri, payload = null) {
-        const message = this.buildMessage(method, uri, payload);
+        // Allocate Message ID and build CoAP message (TKL=0)
+        const mid = this.messageId++;
+        const message = this.buildMessage(method, uri, payload, mid);
         const frame = this.controller.protocol.createCoapFrame(message);
+
+        // Debug logging
+        if (typeof window !== "undefined" && window.__logRaw) {
+            window.__logRaw('CoAP', 'TX', message, { method, uri });
+            window.__logRaw('MUP1', 'TX', frame, { method, uri });
+        }
         
         // Store pending request
-        const token = this.token;
         const promise = new Promise((resolve, reject) => {
-            this.pendingRequests.set(token, { resolve, reject });
+            this.pendingRequests.set(mid, { resolve, reject, meta: { method, uri, payload } });
             
             // Timeout after 10 seconds
             setTimeout(() => {
-                if (this.pendingRequests.has(token)) {
-                    this.pendingRequests.delete(token);
+                if (this.pendingRequests.has(mid)) {
+                    this.pendingRequests.delete(mid);
                     reject(new Error('Request timeout'));
                 }
             }, 10000);
         });
-        
-        this.token++;
         await this.controller.connection.sendBytes(frame);
         
         return promise;
@@ -65,7 +70,7 @@ export class CoAPClient {
     /**
      * Build CoAP message
      */
-    buildMessage(method, uri, payload) {
+    buildMessage(method, uri, payload, messageId) {
         const header = [];
         
         // Version (2 bits) | Type (2 bits) | Token Length (4 bits)
@@ -78,7 +83,6 @@ export class CoAPClient {
         header.push(method);
         
         // Message ID (16 bits)
-        const messageId = this.messageId++;
         header.push((messageId >> 8) & 0xFF);
         header.push(messageId & 0xFF);
         
@@ -241,13 +245,22 @@ export class CoAPClient {
     /**
      * Handle CoAP response
      */
-    handleResponse(data) {
+    handleResponse(data, rawFrame) {
         try {
             const response = this.parseResponse(data);
-            const pending = this.pendingRequests.get(response.token);
+            const pending = this.pendingRequests.get(response.messageId);
             
             if (pending) {
-                this.pendingRequests.delete(response.token);
+                this.pendingRequests.delete(response.messageId);
+                // Debug logging
+                if (typeof window !== "undefined" && window.__logRaw) {
+                    if (rawFrame) window.__logRaw('MUP1', 'RX', rawFrame, { code: response.code });
+                    window.__logRaw('CoAP', 'RX', data, { code: response.code });
+                }
+                if (typeof window !== "undefined" && window.__pushHistory) {
+                    const ok = Math.floor(response.code / 32) === 2;
+                    window.__pushHistory({ method: pending.meta?.method, uri: pending.meta?.uri, payload: pending.meta?.payload, ok, code: response.code, data: response.payload });
+                }
                 
                 const responseClass = Math.floor(response.code / 32);
                 if (responseClass === 2) {

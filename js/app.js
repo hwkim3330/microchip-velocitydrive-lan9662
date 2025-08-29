@@ -507,3 +507,38 @@ window.exportLogs = () => { const el=document.getElementById('log-container'); c
 (function(){
   const origSwitch = window.switchPage;
 })();
+
+
+// === RAW frame logger and history ===
+window.__hex = (bytes)=>{
+  if (!bytes) return ''; const a=[]; for (let i=0;i<bytes.length;i++){ const b=bytes[i].toString(16).toUpperCase().padStart(2,'0'); a.push(b);} return a.join(' ');
+};
+window.__logRaw = (layer, dir, bytes, meta={}) => {
+  try{
+    const box = document.getElementById('log-container'); if (!box) return;
+    const time = new Date().toISOString().split('T')[1].replace('Z','');
+    const head = `[${time}] ${dir} ${layer}${meta.method?(' '+meta.method):''}${meta.uri?(' '+meta.uri):''}${meta.code?(' code='+meta.code):''}`;
+    const body = window.__hex(bytes);
+    const line = document.createElement('div');
+    line.textContent = head + '
+' + body;
+    box.appendChild(line);
+    if (document.getElementById('auto-scroll')?.checked) box.scrollTop = box.scrollHeight;
+  }catch{}
+};
+window.__pushHistory = (entry) => {
+  try{
+    window.app.coapHistory = window.app.coapHistory || [];
+    window.app.coapHistory.unshift({ ts: Date.now(), ...entry });
+    window.app.coapHistory = window.app.coapHistory.slice(0, 20);
+    const el = document.getElementById('coap-history'); if (!el) return;
+    const rows = window.app.coapHistory.map((h,i)=>{
+      const t = new Date(h.ts).toLocaleTimeString();
+      const status = h.ok? 'OK':'ERR';
+      const code = h.code!=null? h.code: '-';
+      return `${i+1}. [${t}] ${h.method||'?'} ${h.uri||''} -> ${status} (${code})`;
+    }).join('
+');
+    el.innerHTML = `<pre>${rows||'No history'}</pre>`;
+  }catch{}
+};
