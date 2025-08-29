@@ -1,14 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAN9662 VelocityDRIVE Control Center</title>
+    <title>LAN9662 TSN Performance Testing Hub</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .tsn-links {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .tsn-links h2 {
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        .tsn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .tsn-link-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .tsn-link-card:hover {
+            transform: translateY(-3px);
+        }
+        .tsn-link-card a {
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 500;
+        }
+        .tsn-link-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- TSN Testing Links Section -->
+        <div class="tsn-links">
+            <h2>🌐 TSN Performance Testing Tools - 김현우</h2>
+            <div class="tsn-grid">
+                <div class="tsn-link-card">
+                    <div class="icon">🔧</div>
+                    <a href="tsn-configurator.html">WebSerial 보드 설정</a>
+                </div>
+                <div class="tsn-link-card">
+                    <div class="icon">📊</div>
+                    <a href="tsn-test-tools/monitoring_dashboard.html">실시간 모니터링</a>
+                </div>
+                <div class="tsn-link-card">
+                    <div class="icon">📚</div>
+                    <a href="tsn-test-tools/TSN_EXPLANATION.md">TSN 가이드</a>
+                </div>
+                <div class="tsn-link-card">
+                    <div class="icon">🎨</div>
+                    <a href="tsn-test-tools/demo_visualizer.html">시각화 도구</a>
+                </div>
+                <div class="tsn-link-card">
+                    <div class="icon">📖</div>
+                    <a href="tsn-test-tools/README_KR.md">한국어 문서</a>
+                </div>
+                <div class="tsn-link-card">
+                    <div class="icon">💻</div>
+                    <a href="https://github.com/hwkim3330/microchip-velocitydrive-lan9662">GitHub</a>
+                </div>
+            </div>
+        </div>
+
         <!-- Header -->
         <header class="app-header">
             <div class="header-left">
