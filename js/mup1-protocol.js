@@ -32,8 +32,9 @@ class MUP1Protocol {
         const header = new Uint8Array([0x40, 0x05]); // Based on log: "40 05"
         const msgId = new Uint8Array([(this.messageId >> 8) & 0xFF, this.messageId & 0xFF]);
         
-        // Build frame
-        const frameData = new Uint8Array(header.length + 2 + 2 + payload.length + 4);
+        // Calculate total frame size: header(2) + msgId(2) + markers(2) + checksum(2) + separators(7) + payload
+        const frameSize = 2 + 2 + 2 + 2 + 7 + payload.length;
+        const frameData = new Uint8Array(frameSize);
         let offset = 0;
         
         // Header
@@ -313,6 +314,15 @@ class CBORCodec {
             const parts = [new Uint8Array([0x80 | Math.min(data.length, 23)])];
             data.forEach(item => {
                 parts.push(this.encode(item));
+            });
+            return this.concatArrays(parts);
+        } else if (typeof data === 'object' && data !== null) {
+            // Object/map encoding
+            const keys = Object.keys(data);
+            const parts = [new Uint8Array([0xA0 | Math.min(keys.length, 23)])];
+            keys.forEach(key => {
+                parts.push(this.encode(key));
+                parts.push(this.encode(data[key]));
             });
             return this.concatArrays(parts);
         }

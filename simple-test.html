@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple VelocityDRIVE Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .console { background: #000; color: #0f0; padding: 10px; height: 300px; overflow-y: scroll; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Simple VelocityDRIVE Test</h1>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendPing()">Send Ping</button>
+    <button onclick="sendYangQuery()">Send YANG Query</button>
+    <div class="console" id="console"></div>
+
+    <script>
+        let port = null;
+        let reader = null;
+        let writer = null;
+        
+        function log(msg) {
+            const console = document.getElementById('console');
+            const time = new Date().toTimeString().split(' ')[0];
+            console.innerHTML += `[${time}] ${msg}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        async function connect() {
+            try {
+                log('Requesting serial port...');
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+                
+                reader = port.readable.getReader();
+                writer = port.writable.getWriter();
+                
+                log('✓ Connected! Starting read loop...');
+                readLoop();
+                
+            } catch (error) {
+                log(`✗ Connection error: ${error.message}`);
+            }
+        }
+        
+        async function readLoop() {
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    // Convert to text for display
+                    const text = new TextDecoder().decode(value);
+                    log(`← ${text.trim()}`);
+                }
+            } catch (error) {
+                log(`Read error: ${error.message}`);
+            }
+        }
+        
+        async function sendPing() {
+            if (!writer) {
+                log('✗ Not connected');
+                return;
+            }
+            
+            try {
+                const ping = '>p<<8553';
+                await writer.write(new TextEncoder().encode(ping));
+                log(`→ ${ping}`);
+            } catch (error) {
+                log(`✗ Send error: ${error.message}`);
+            }
+        }
+        
+        async function sendYangQuery() {
+            if (!writer) {
+                log('✗ Not connected');
+                return;
+            }
+            
+            try {
+                // From CLI log: sends 'c' after successful handshake
+                const query = 'c';
+                await writer.write(new TextEncoder().encode(query));
+                log(`→ ${query}`);
+            } catch (error) {
+                log(`✗ Send error: ${error.message}`);
+            }
+        }
+        
+        log('Ready! Click Connect to start.');
+        
+    </script>
+</body>
+</html>

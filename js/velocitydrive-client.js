@@ -280,7 +280,7 @@ class VelocityDriveClient {
         
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                reject new Error('Request timeout'));
+                reject(new Error('Request timeout'));
             }, 10000);
             
             const handler = (data) => {

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VelocityDRIVE Protocol Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .console { 
+            background: #000; 
+            color: #0f0; 
+            padding: 10px; 
+            height: 400px; 
+            overflow-y: scroll; 
+            border: 1px solid #333;
+            white-space: pre-wrap;
+        }
+        button { 
+            padding: 10px; 
+            margin: 5px; 
+            font-size: 16px;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border: 1px solid #ccc;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>VelocityDRIVE LAN9662 Protocol Test</h1>
+    
+    <div class="status" id="status">Status: Disconnected</div>
+    
+    <button onclick="connect()">Connect to Device</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="testYangCatalog()">Get YANG Catalog</button>
+    <button onclick="getInterfaces()">Get Interfaces</button>
+    <button onclick="clearConsole()">Clear Console</button>
+    
+    <h3>Console Output:</h3>
+    <div class="console" id="console"></div>
+
+    <script src="js/mup1-protocol.js"></script>
+    <script src="js/velocitydrive-client.js"></script>
+    <script>
+        let client = new VelocityDriveClient();
+        
+        // Event listeners
+        client.on('connected', () => {
+            updateStatus('Connected - Discovering device...');
+            log('✓ Serial connection established');
+        });
+        
+        client.on('disconnected', () => {
+            updateStatus('Disconnected');
+            log('✗ Serial connection closed');
+        });
+        
+        client.on('deviceDiscovered', (deviceInfo) => {
+            updateStatus(`Connected to ${deviceInfo.version}`);
+            log(`✓ Device discovered: ${deviceInfo.version}`);
+            log(`  Parameters: ${deviceInfo.param1}, ${deviceInfo.param2}, ${deviceInfo.param3}`);
+        });
+        
+        client.on('yangCatalogReceived', (catalogId) => {
+            log(`✓ YANG catalog received: ${catalogId}`);
+        });
+        
+        client.on('dataReceived', (data) => {
+            log(`← Data: ${JSON.stringify(data, null, 2)}`);
+        });
+        
+        client.on('error', (error) => {
+            log(`✗ Error: ${error.message}`);
+        });
+        
+        client.on('rawData', (data) => {
+            const direction = data.direction === 'send' ? '→' : '←';
+            const bytes = Array.from(data.data).map(b => b.toString(16).padStart(2, '0')).join(' ');
+            log(`${direction} Raw: ${bytes}`);
+        });
+        
+        function updateStatus(text) {
+            document.getElementById('status').textContent = `Status: ${text}`;
+        }
+        
+        function log(message) {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            console.textContent += `[${timestamp}] ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function clearConsole() {
+            document.getElementById('console').textContent = '';
+        }
+        
+        async function connect() {
+            try {
+                log('Requesting serial port access...');
+                await client.connect();
+            } catch (error) {
+                log(`✗ Connection failed: ${error.message}`);
+            }
+        }
+        
+        async function disconnect() {
+            try {
+                await client.disconnect();
+            } catch (error) {
+                log(`✗ Disconnect error: ${error.message}`);
+            }
+        }
+        
+        async function testYangCatalog() {
+            if (!client.isConnected()) {
+                log('✗ Not connected to device');
+                return;
+            }
+            
+            try {
+                log('Getting YANG catalog...');
+                await client.getYangCatalog();
+            } catch (error) {
+                log(`✗ YANG catalog error: ${error.message}`);
+            }
+        }
+        
+        async function getInterfaces() {
+            if (!client.isConnected()) {
+                log('✗ Not connected to device');
+                return;
+            }
+            
+            if (!client.getYangCatalogId()) {
+                log('✗ YANG catalog not loaded yet');
+                return;
+            }
+            
+            try {
+                log('Getting interfaces...');
+                const interfaces = await client.getInterfaces();
+                log(`✓ Interfaces: ${JSON.stringify(interfaces, null, 2)}`);
+            } catch (error) {
+                log(`✗ Interface query error: ${error.message}`);
+            }
+        }
+        
+        // Initial status
+        log('VelocityDRIVE Protocol Test Ready');
+        log('Click "Connect to Device" to start');
+        
+    </script>
+</body>
+</html>
